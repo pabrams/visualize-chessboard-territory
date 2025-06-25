@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+public/cm-chessboard-assets
 
 # Editor directories and files
 .vscode/*
