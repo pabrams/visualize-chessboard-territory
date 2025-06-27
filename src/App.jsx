@@ -48,7 +48,6 @@ const App = () => {
         });
 
         chessboardRef.current = board;
-
         const inputHandler = (event) => {
             const { type, squareFrom, squareTo, promotion } = event;
             const board = chessboardRef.current;
@@ -61,7 +60,7 @@ const App = () => {
             if (type === INPUT_EVENT_TYPE.moveInputStarted) {
                 const moves = game.moves({ square: squareFrom, verbose: true });
                 board.addLegalMovesMarkers(moves);
-                removeAllMarkers();
+                // removeAllMarkers();
                 board.addMarker(MARKER_TYPE.circle, squareFrom);
                 return moves.length > 0;
             }
@@ -91,12 +90,10 @@ const App = () => {
             }
 
             if (type === INPUT_EVENT_TYPE.moveInputFinished && event.legalMove) {
-                board.removeArrows();
                 showAllSquareControl(board);
             }
         };
-
-        board.enableMoveInput(inputHandler, gameRef.current.turn());
+        board.enableMoveInput(inputHandler);
         showAllSquareControl(board);
 
         return () => {
@@ -130,10 +127,13 @@ const App = () => {
 
     const removeAllMarkers = () => {
         if (chessboardRef.current) {
-            chessboardRef.current.removeMarkers(MARKER_TYPE.square);
-            chessboardRef.current.removeMarkers(MARKER_TYPE.frame);
-            chessboardRef.current.removeMarkers(MARKER_TYPE.dot);
-            chessboardRef.current.removeMarkers(MARKER_TYPE.circle);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.circle);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.square);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.frame);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.framePrimary);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.frameDanger);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.dot);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.circle);
         }
     };
     
