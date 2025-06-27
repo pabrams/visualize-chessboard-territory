@@ -60,7 +60,7 @@ const App = () => {
             if (type === INPUT_EVENT_TYPE.moveInputStarted) {
                 const moves = game.moves({ square: squareFrom, verbose: true });
                 board.addLegalMovesMarkers(moves);
-                // removeAllMarkers();
+
                 board.addMarker(MARKER_TYPE.circle, squareFrom);
                 return moves.length > 0;
             }
@@ -163,7 +163,7 @@ const App = () => {
     const showAllSquareControl = (chessboard) => {
         removeAllMarkers();
         if (showSquareControl) {
-            SQUARES.forEach(square => showSquareControlFunc(chessboard, square));
+          SQUARES.forEach(square => showSquareControlFunc(chessboard, square));
         }
     };
 
