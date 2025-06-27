@@ -1,9 +1,10 @@
 // App.test.jsx
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import App from './App';
+import { Chess } from 'chess.js';
 
 // Mock the chess libraries since they're external dependencies
 vi.mock('cm-chessboard', () => ({
@@ -18,6 +19,7 @@ vi.mock('cm-chessboard', () => ({
     getPiece: vi.fn(),
     addLegalMovesMarkers: vi.fn(),
     showPromotionDialog: vi.fn(),
+    destroy: vi.fn(),
     state: { moveInputProcess: Promise.resolve() }
   })),
   INPUT_EVENT_TYPE: {
@@ -30,18 +32,18 @@ vi.mock('cm-chessboard', () => ({
   BORDER_TYPE: { frame: 'frame' }
 }));
 
-vi.mock('cm-chessboard/src/extensions/accessibility/Accessibility.js', () => ({
+vi.mock('cm-chessboard/src/extensions/accessibility/Accessibility', () => ({
   Accessibility: vi.fn()
 }));
 
-vi.mock('cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js', () => ({
+vi.mock('cm-chessboard/src/extensions/promotion-dialog/PromotionDialog', () => ({
   PromotionDialog: vi.fn(),
   PROMOTION_DIALOG_RESULT_TYPE: {
     pieceSelected: 'pieceSelected'
   }
 }));
 
-vi.mock('cm-chessboard/src/extensions/markers/Markers.js', () => ({
+vi.mock('cm-chessboard/src/extensions/markers/Markers', () => ({
   Markers: vi.fn(),
   MARKER_TYPE: {
     square: 'square',
@@ -55,7 +57,7 @@ vi.mock('cm-chessboard/src/extensions/markers/Markers.js', () => ({
   }
 }));
 
-vi.mock('cm-chessboard/src/extensions/arrows/Arrows.js', () => ({
+vi.mock('cm-chessboard/src/extensions/arrows/Arrows', () => ({
   Arrows: vi.fn(),
   ARROW_TYPE: {
     default: 'default',
@@ -63,16 +65,7 @@ vi.mock('cm-chessboard/src/extensions/arrows/Arrows.js', () => ({
   }
 }));
 
-vi.mock('chess.js', () => ({
-  Chess: vi.fn().mockImplementation((fen) => ({
-    fen: vi.fn().mockReturnValue(fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'),
-    turn: vi.fn().mockReturnValue('w'),
-    move: vi.fn(),
-    moves: vi.fn().mockReturnValue([]),
-    attackers: vi.fn().mockReturnValue([])
-  })),
-  SQUARES: ['a1', 'a2', 'a3', 'b1', 'b2', 'b3'] // abbreviated for testing
-}));
+vi.mock('chess.js');
 
 // Mock localStorage
 const localStorageMock = {
@@ -212,7 +205,6 @@ describe('Chess App', () => {
   describe('Preset Positions', () => {
     test('contains expected preset positions', () => {
       render(<App />);
-      const select = screen.getByLabelText('Select FEN:');
       
       expect(screen.getByText('Standard starting position')).toBeInTheDocument();
       expect(screen.getByText('1912 Levitsky Marshall')).toBeInTheDocument();
@@ -220,6 +212,84 @@ describe('Chess App', () => {
       expect(screen.getByText('1963 Petrosian Spassky')).toBeInTheDocument();
       expect(screen.getByText('1965 Kholmov Bronstein')).toBeInTheDocument();
       expect(screen.getByText('1972 Fischer Spassky game 2')).toBeInTheDocument();
+    });
+  });
+
+  describe('Chess Game Logic', () => {
+    let mockChessInstance;
+
+    beforeEach(() => {
+      mockChessInstance = {
+        fen: vi.fn().mockReturnValue('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'),
+        turn: vi.fn().mockReturnValue('w'),
+        move: vi.fn((move) => {
+          if (move.from === 'e2' && move.to === 'e4') {
+            mockChessInstance.fen.mockReturnValue('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1');
+            mockChessInstance.turn.mockReturnValue('b');
+            return { from: 'e2', to: 'e4', san: 'e4' };
+          }
+          if (move.from === 'c7' && move.to === 'c5') {
+            mockChessInstance.fen.mockReturnValue('rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2');
+            mockChessInstance.turn.mockReturnValue('w');
+            return { from: 'c7', to: 'c5', san: 'c5' };
+          }
+          return null;
+        }),
+        moves: vi.fn().mockReturnValue(['e4']),
+        attackers: vi.fn().mockReturnValue([]),
+        load: vi.fn(),
+      };
+      vi.mocked(Chess).mockImplementation(() => mockChessInstance);
+    });
+
+    test('should allow a valid white move and then a black move', async () => {
+        const { Chessboard } = await import('cm-chessboard');
+        const chessboardInstance = new Chessboard();
+
+        let inputHandler;
+
+        vi.mocked(chessboardInstance.enableMoveInput).mockImplementationOnce(handler => {
+            inputHandler = handler;
+        });
+
+        render(<App />);
+
+        await waitFor(() => expect(chessboardInstance.enableMoveInput).toHaveBeenCalled());
+
+        // --- White's move: e2 to e4 ---
+        await act(async () => {
+            const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'e2', squareTo: 'e4' });
+            expect(result).toBe(true);
+        });
+        
+        expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'e2', to: 'e4' });
+
+        await waitFor(() => {
+            expect(chessboardInstance.setPosition).toHaveBeenCalledWith('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', true);
+        });
+        await waitFor(() => {
+            expect(chessboardInstance.enableMoveInput).toHaveBeenCalledTimes(2);
+        });
+
+        // --- Black's move: c7 to c5 ---
+        vi.mocked(chessboardInstance.enableMoveInput).mockImplementationOnce(handler => {
+            inputHandler = handler;
+        });
+
+        await act(async () => {
+            const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'c7', squareTo: 'c5' });
+            expect(result).toBe(true);
+        });
+
+        expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'c7', to: 'c5' });
+
+        await waitFor(() => {
+            expect(chessboardInstance.setPosition).toHaveBeenCalledWith('rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2', true);
+        });
+        
+        await waitFor(() => {
+            expect(chessboardInstance.enableMoveInput).toHaveBeenCalledTimes(3);
+        });
     });
   });
 });
