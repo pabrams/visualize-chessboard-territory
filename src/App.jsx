@@ -72,8 +72,7 @@ const App = () => {
                 if (result) {
                     board.setPosition(game.fen()).then(() => {
                         showAllSquareControl(board);
-                        // Disable previous move input and enable for the new turn
-                        board.disableMoveInput();
+                        // Re-enable move input for the new turn
                         board.enableMoveInput(inputHandler, game.turn());
                     });
                 } else {
@@ -84,8 +83,7 @@ const App = () => {
                                 game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
                                 board.setPosition(game.fen()).then(() => {
                                     showAllSquareControl(board);
-                                    // Disable previous move input and enable for the new turn
-                                    board.disableMoveInput();
+                                    // Re-enable move input for the new turn after promotion
                                     board.enableMoveInput(inputHandler, game.turn());
                                 });
                             }
