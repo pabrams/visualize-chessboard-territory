@@ -263,7 +263,6 @@ describe('Chess App', () => {
       
       // --- White's move: e2 to e4 ---
       await act(async () => {
-        // Simulate the chessboard's color restriction check
         const piece = { color: 'w' }; // e2 has a white piece
         const moveAllowedByChessboard = !restrictedToColor || piece.color === restrictedToColor;
         
@@ -271,7 +270,6 @@ describe('Chess App', () => {
           const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'e2', squareTo: 'e4' });
           expect(result).toBeTruthy();
         } else {
-          // This shouldn't happen for white's first move
           throw new Error('White move unexpectedly blocked');
         }
       });
@@ -280,44 +278,18 @@ describe('Chess App', () => {
       
       // --- Black's move: c7 to c5 ---
       await act(async () => {
-        // Simulate the chessboard's color restriction check for black piece
-        const piece = { color: 'b' }; // c7 has a black piece
+        const piece = { color: 'b' };
         const moveAllowedByChessboard = !restrictedToColor || piece.color === restrictedToColor;
         
         if (moveAllowedByChessboard) {
           const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'c7', squareTo: 'c5' });
           expect(result).toBeTruthy();
         } else {
-          // With the bug, this should fail because restrictedToColor is 'w'
-          // Without the bug, restrictedToColor should be undefined/null
-          expect(restrictedToColor).toBe('w'); // This proves the bug exists
-          return; // Don't try to make the move
+          expect(restrictedToColor).toBe('w');
+          return;
         }
       });
-      
-      // This should only be reached when the bug is fixed
       expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'c7', to: 'c5' });
-    });
-  });
-});
-
-// Additional utility function tests that could be extracted
-describe('Chess App Utility Functions', () => {
-  // If you extract these functions to separate modules, you can test them independently
-  
-  describe('FEN Validation', () => {
-    test('should validate standard starting position', () => {
-      const standardFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
-      // This would test a utility function that validates FEN strings
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('Square Control Calculation', () => {
-    test('should calculate net attackers correctly', () => {
-      // This would test the logic in showSquareControlForSquare
-      // if extracted to a pure function
-      expect(true).toBe(true); // Placeholder
     });
   });
 });
