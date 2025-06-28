@@ -72,8 +72,6 @@ const App = () => {
                 if (result) {
                     board.setPosition(game.fen()).then(() => {
                         showAllSquareControl(board);
-                        // Re-enable move input for the new turn
-                        board.enableMoveInput(inputHandler, game.turn());
                     });
                 } else {
                     const possibleMoves = game.moves({ square: squareFrom, verbose: true });
@@ -83,8 +81,6 @@ const App = () => {
                                 game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
                                 board.setPosition(game.fen()).then(() => {
                                     showAllSquareControl(board);
-                                    // Re-enable move input for the new turn after promotion
-                                    board.enableMoveInput(inputHandler, game.turn());
                                 });
                             }
                         });
@@ -99,8 +95,8 @@ const App = () => {
                 showAllSquareControl(board);
             }
         };
-        
-        board.enableMoveInput(inputHandler, gameRef.current.turn());
+
+        board.enableMoveInput(inputHandler);
         showAllSquareControl(board);
 
         return () => {
