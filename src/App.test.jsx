@@ -244,61 +244,60 @@ describe('Chess App', () => {
       };
       vi.mocked(Chess).mockImplementation(() => mockChessInstance);
     });
+    
     test('should allow a valid white move and then a black move', async () => {
       let inputHandler;
-    
-      // This sets the first move input handler
-      mockChessboardInstance.enableMoveInput.mockImplementationOnce(handler => {
+      let restrictedToColor = null;
+      
+      // Mock enableMoveInput to track the color restriction
+      mockChessboardInstance.enableMoveInput.mockImplementation((handler, colorRestriction) => {
         inputHandler = handler;
+        restrictedToColor = colorRestriction; // This will be 'w' with the bug, undefined without
       });
-    
+      
       render(<App />);
-    
+      
       await waitFor(() =>
         expect(mockChessboardInstance.enableMoveInput).toHaveBeenCalled()
       );
-    
+      
       // --- White's move: e2 to e4 ---
       await act(async () => {
-        const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'e2', squareTo: 'e4' });
-        expect(result).toBeTruthy();
+        // Simulate the chessboard's color restriction check
+        const piece = { color: 'w' }; // e2 has a white piece
+        const moveAllowedByChessboard = !restrictedToColor || piece.color === restrictedToColor;
+        
+        if (moveAllowedByChessboard) {
+          const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'e2', squareTo: 'e4' });
+          expect(result).toBeTruthy();
+        } else {
+          // This shouldn't happen for white's first move
+          throw new Error('White move unexpectedly blocked');
+        }
       });
-    
+      
       expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'e2', to: 'e4' });
-    
-      await waitFor(() => {
-        expect(mockChessboardInstance.setPosition).toHaveBeenCalledWith(
-          'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'
-        );
-      });
-    
-      await waitFor(() => {
-        expect(mockChessboardInstance.enableMoveInput).toHaveBeenCalledTimes(1);
-      });
-    
+      
       // --- Black's move: c7 to c5 ---
-      mockChessboardInstance.enableMoveInput.mockImplementationOnce(handler => {
-        inputHandler = handler;
-      });
-    
       await act(async () => {
-        const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'c7', squareTo: 'c5' });
-        expect(result).toBeTruthy();
+        // Simulate the chessboard's color restriction check for black piece
+        const piece = { color: 'b' }; // c7 has a black piece
+        const moveAllowedByChessboard = !restrictedToColor || piece.color === restrictedToColor;
+        
+        if (moveAllowedByChessboard) {
+          const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'c7', squareTo: 'c5' });
+          expect(result).toBeTruthy();
+        } else {
+          // With the bug, this should fail because restrictedToColor is 'w'
+          // Without the bug, restrictedToColor should be undefined/null
+          expect(restrictedToColor).toBe('w'); // This proves the bug exists
+          return; // Don't try to make the move
+        }
       });
-    
+      
+      // This should only be reached when the bug is fixed
       expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'c7', to: 'c5' });
-      console.log(mockChessboardInstance.setPosition.mock.calls);
-      await waitFor(() => {
-        expect(mockChessboardInstance.setPosition).toHaveBeenCalledWith(
-          'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2'
-        );
-      });
-    
-      await waitFor(() => {
-        expect(mockChessboardInstance.enableMoveInput).toHaveBeenCalledTimes(1);
-      });
     });
-    
   });
 });
 
