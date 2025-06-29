@@ -15,18 +15,18 @@ export const showSquareControlFunc = (chessboard, square, game) => {
     const blackAttackers = game.attackers(square, 'b').length;
     const whiteAttackers = game.attackers(square, 'w').length;
     let netAttackers = blackAttackers - whiteAttackers;
-    let color = "";
+    let winningColor = "";
     
-    if (netAttackers > 0) color = 'b';
-    else if (netAttackers < 0) color = 'w';
+    if (netAttackers > 0) winningColor = 'b';
+    else if (netAttackers < 0) winningColor = 'w';
     
     netAttackers = Math.abs(netAttackers);
     const piece = chessboard.getPiece(square) || "";
 
     // Show square control frames
-    if (color === 'b') {
+    if (winningColor === 'b') {
         for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
-    } else if (color === 'w') {
+    } else if (winningColor === 'w') {
         for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
     }
 
