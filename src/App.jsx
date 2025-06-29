@@ -59,6 +59,7 @@ const App = () => {
 
             if (type === INPUT_EVENT_TYPE.moveInputStarted) {
                 const moves = game.moves({ square: squareFrom, verbose: true });
+                removeAllMarkers();
                 board.addLegalMovesMarkers(moves);
 
                 board.addMarker(MARKER_TYPE.circle, squareFrom);
@@ -70,6 +71,7 @@ const App = () => {
                 const result = game.move(move);
                 if (result) {
                     board.setPosition(game.fen()).then(() => {
+                        gameRef.current = new Chess(game.fen());
                         showAllSquareControl(board);
                     });
                 } else {
@@ -79,6 +81,7 @@ const App = () => {
                             if (result.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) {
                                 game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
                                 board.setPosition(game.fen()).then(() => {
+                                    gameRef.current = new Chess(game.fen());
                                     showAllSquareControl(board);
                                 });
                             }
@@ -89,7 +92,7 @@ const App = () => {
                 return result;
             }
 
-            if (type === INPUT_EVENT_TYPE.moveInputFinished && event.legalMove) {
+            if (type === INPUT_EVENT_TYPE.moveInputFinished) {
                 showAllSquareControl(board);
             }
         };
@@ -134,7 +137,8 @@ const App = () => {
           chessboardRef.current.removeMarkers(MARKER_TYPE.framePrimary);
           chessboardRef.current.removeMarkers(MARKER_TYPE.frameDanger);
           chessboardRef.current.removeMarkers(MARKER_TYPE.dot);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.circle);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.circlePrimary);
+          chessboardRef.current.removeMarkers(MARKER_TYPE.circleDanger);
         }
     };
     
@@ -152,12 +156,29 @@ const App = () => {
         netAttackers = Math.abs(netAttackers);
         const piece = chessboard.getPiece(square) || "";
 
+        // Show square control frames
         if (color === 'b') {
             for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
-            if (piece.startsWith('w')) chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
         } else if (color === 'w') {
             for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
-            if (piece.startsWith('b')) chessboard.addMarker(MARKER_TYPE.circleDanger, square);
+        }
+
+        // Show en pris circles - only if there's a piece and it's actually en prise
+        if (piece) {
+            const pieceColor = piece.charAt(0);
+            const opponentColor = pieceColor === 'w' ? 'b' : 'w';
+            
+            const attackers = gameRef.current.attackers(square, opponentColor).length;
+            const defenders = gameRef.current.attackers(square, pieceColor).length;
+            
+            // A piece is en pris if it's attacked and has fewer defenders than attackers
+            if (attackers > 0 && attackers > defenders) {
+                if (pieceColor === 'w') {
+                    chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
+                } else {
+                    chessboard.addMarker(MARKER_TYPE.circleDanger, square);
+                }
+            }
         }
     };
 
@@ -200,7 +221,7 @@ const App = () => {
                     <li>Blue frames denote Black control</li>
                     <li>Red frames denote White control</li>
                     <li>The higher the control, the more opaque the frame will appear.</li>
-                    <li>Pieces <i>en pris</i> are circled.</li>
+                    <li>Pieces <i>en prise</i> are circled.</li>
                 </ul>
                 <br /><br />
                 <h2>Square Control</h2>

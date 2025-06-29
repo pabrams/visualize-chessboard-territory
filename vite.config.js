@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename)
 export default defineConfig({
   plugins: [react()],
   test: {
+    reporter: ['basic'],
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
