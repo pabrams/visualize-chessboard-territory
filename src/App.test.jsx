@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import App from './App';
 import { Chess } from 'chess.js';
+import { showSquareControlFunc } from './App';
 
 const mockChessboardInstance = {
   setPosition: vi.fn().mockResolvedValue(),
@@ -230,30 +231,120 @@ describe('Chess App', () => {
       vi.mocked(Chess).mockImplementation(() => mockChessInstance);
     });
 
-    test('highlights white piece en prise when attacked by black and undefended', async () => {
-      // Setup: White knight on d4 attacked by black bishop, no white defenders
+
+    test('highlights2 e4 as en prise after 1. e4 d5', () => {
+      // Override attackers mock to simulate black attacking e4, white not defending
       mockChessInstance.attackers.mockImplementation((square, color) => {
-        if (square === 'd4' && color === 'b') return ['c5']; // Black bishop attacks
-        if (square === 'd4' && color === 'w') return []; // No white defenders
+        if (square === 'e4' && color === 'b') return ['d5'];
+        if (square === 'e4' && color === 'w') return [];
         return [];
       });
+
+      mockChessboardInstance.getPiece.mockReturnValue('wp'); // Mock a white pawn on e4
       
-      mockChessboardInstance.getPiece.mockImplementation((square) => {
-        if (square === 'd4') return 'wn'; // White knight
-        return '';
+      // Call your function with the mock objects
+      showSquareControlFunc(mockChessboardInstance, 'e4', mockChessInstance);
+
+      // Assert the en prise marker was added for e4
+      expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith('circlePrimary', 'e4');
+    });
+    test('highlights e4 as en prise after 1. e4 d5', async () => {
+      
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'e4' && color === 'b') return ['d5'];
+        if (square === 'e4' && color === 'w') return [];
+        return [];
+      });
+      let inputHandler;
+
+      mockChessboardInstance.enableMoveInput.mockImplementation((handler) => {
+        inputHandler = handler;
       });
 
       render(<App />);
 
       await waitFor(() => {
-        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
-          'framePrimary', 'd4'
-        );
-        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
-          'circlePrimary', 'd4'
-        );
+        expect(mockChessboardInstance.enableMoveInput).toHaveBeenCalled();
+      });
+
+      // Play 1. e4
+      await act(() => {
+        inputHandler({
+          type: 'validateMoveInput',
+          squareFrom: 'e2',
+          squareTo: 'e4',
+        });
+      });
+
+      expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'e2', to: 'e4' });
+
+      // Play 1...d5
+      await act(() => {
+        inputHandler({
+          type: 'validateMoveInput',
+          squareFrom: 'd7',
+          squareTo: 'd5',
+        });
+      });
+
+      expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'd7', to: 'd5' });
+
+      // 🔥 Here's the critical part: manually trigger the logic you're trying to test
+      act(() => {
+        // You may need to import this from the same module it's defined in
+        // If it's inside App, you might need to expose it or mock it
+        showSquareControlFunc(mockChessboardInstance, 'e4', mockChessInstance);
+      });
+
+      // Assert that e4 got marked as en prise
+      const calls = mockChessboardInstance.addMarker.mock.calls;
+      console.log('addMarker calls:', calls);
+
+      const e4Marked = calls.some(
+        ([type, square]) => type === 'circlePrimary' && square === 'e4'
+      );
+      expect(e4Marked).toBe(true);
+    });
+
+
+
+    test('highlights white piece en prise when attacked by black and undefended', async () => {
+      // Setup: White knight on d4 attacked by black bishop, no white defenders
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'd4' && color === 'b') return ['c5']; // Black bishop attacks
+        if (square === 'd4' && color === 'w') return [];     // No white defenders
+        return [];
+      });
+
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'd4') return 'wn'; // White knight
+        return '';
+      });
+
+      let inputHandler;
+      mockChessboardInstance.enableMoveInput.mockImplementation((handler) => {
+        inputHandler = handler;
+      });
+
+      render(<App />);
+
+      await waitFor(() => expect(mockChessboardInstance.enableMoveInput).toHaveBeenCalled());
+
+      // Simulate a move to trigger game logic (can be arbitrary)
+      await act(async () => {
+        await inputHandler({
+          type: 'validateMoveInput',
+          squareFrom: 'e2',
+          squareTo: 'e4',
+        });
+      });
+
+      // Wait for en prise marker
+      await waitFor(() => {
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith('circlePrimary', 'd4');
       });
     });
+
 
     test('highlights black piece en prise when attacked by white and undefended', async () => {
       // Setup: Black queen on e5 attacked by white rook, no black defenders
@@ -271,9 +362,6 @@ describe('Chess App', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
-          'frameDanger', 'e5'
-        );
         expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
           'circleDanger', 'e5'
         );

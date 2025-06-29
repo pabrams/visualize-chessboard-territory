@@ -11,6 +11,46 @@ import 'cm-chessboard/assets/extensions/markers/markers.css';
 import 'cm-chessboard/assets/extensions/arrows/arrows.css';
 import 'cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css';
 
+export const showSquareControlFunc = (chessboard, square, game) => {
+    console.log('game arg:', game);
+    const blackAttackers = game.attackers(square, 'b').length;
+    const whiteAttackers = game.attackers(square, 'w').length;
+    let netAttackers = blackAttackers - whiteAttackers;
+    let color = "";
+    
+    if (netAttackers > 0) color = 'b';
+    else if (netAttackers < 0) color = 'w';
+    
+    netAttackers = Math.abs(netAttackers);
+    const piece = chessboard.getPiece(square) || "";
+
+    // Show square control frames
+    if (color === 'b') {
+        for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
+    } else if (color === 'w') {
+        for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
+    }
+
+    // Show en pris circles - only if there's a piece and it's actually en pris
+    if (piece) {
+        const pieceColor = piece.charAt(0);
+        const opponentColor = pieceColor === 'w' ? 'b' : 'w';
+        
+        const attackers = game.attackers(square, opponentColor).length;
+        const defenders = game.attackers(square, pieceColor).length;
+
+        // A piece is en pris if it's attacked and has fewer defenders than attackers
+        if (attackers > 0 && attackers > defenders) {
+            if (pieceColor === 'w') {
+                console.log(`adding marker circlePrimary to ${square}`);
+                chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
+            } else {
+                chessboard.addMarker(MARKER_TYPE.circleDanger, square);
+            }
+        }
+    }
+};
+
 const App = () => {
     const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
     const [showSquareControl, setShowSquareControl] = useState(true);
@@ -70,8 +110,8 @@ const App = () => {
                 const move = { from: squareFrom, to: squareTo, promotion };
                 const result = game.move(move);
                 if (result) {
+                    game.load(game.fen());
                     board.setPosition(game.fen()).then(() => {
-                        gameRef.current = new Chess(game.fen());
                         showAllSquareControl(board);
                     });
                 } else {
@@ -80,8 +120,8 @@ const App = () => {
                         board.showPromotionDialog(squareTo, game.turn(), (result) => {
                             if (result.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) {
                                 game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
+                                game.load(game.fen()); // Add this line
                                 board.setPosition(game.fen()).then(() => {
-                                    gameRef.current = new Chess(game.fen());
                                     showAllSquareControl(board);
                                 });
                             }
@@ -141,51 +181,11 @@ const App = () => {
           chessboardRef.current.removeMarkers(MARKER_TYPE.circleDanger);
         }
     };
-    
-    const showSquareControlFunc = (chessboard, square) => {
-        if (!showSquareControl) return;
-        
-        const blackAttackers = gameRef.current.attackers(square, 'b').length;
-        const whiteAttackers = gameRef.current.attackers(square, 'w').length;
-        let netAttackers = blackAttackers - whiteAttackers;
-        let color = "";
-        
-        if (netAttackers > 0) color = 'b';
-        else if (netAttackers < 0) color = 'w';
-        
-        netAttackers = Math.abs(netAttackers);
-        const piece = chessboard.getPiece(square) || "";
-
-        // Show square control frames
-        if (color === 'b') {
-            for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
-        } else if (color === 'w') {
-            for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
-        }
-
-        // Show en pris circles - only if there's a piece and it's actually en pris
-        if (piece) {
-            const pieceColor = piece.charAt(0);
-            const opponentColor = pieceColor === 'w' ? 'b' : 'w';
-            
-            const attackers = gameRef.current.attackers(square, opponentColor).length;
-            const defenders = gameRef.current.attackers(square, pieceColor).length;
-            
-            // A piece is en pris if it's attacked and has fewer defenders than attackers
-            if (attackers > 0 && attackers > defenders) {
-                if (pieceColor === 'w') {
-                    chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
-                } else {
-                    chessboard.addMarker(MARKER_TYPE.circleDanger, square);
-                }
-            }
-        }
-    };
 
     const showAllSquareControl = (chessboard) => {
         removeAllMarkers();
         if (showSquareControl) {
-          SQUARES.forEach(square => showSquareControlFunc(chessboard, square));
+          SQUARES.forEach(square => showSquareControlFunc(chessboard, square, gameRef.current));
         }
     };
 
@@ -209,7 +209,10 @@ const App = () => {
         { value: "r1b2rk1/pp1ppp1p/5bp1/q7/3nP2Q/1BN1B3/PPP2PPP/R4RK1 w", label: "1962 Nezhmetdinov Chernikov" },
         { value: "6k1/5r1p/p2N4/nppP2q1/2P5/1P2N3/PQ5P/7K w", label: "1963 Petrosian Spassky" },
         { value: "r1b2r1k/4qp1p/p2ppb1Q/4nP2/1p1NP3/2N5/PPP4P/2KR1BR1 w", label: "1965 Kholmov Bronstein" },
-        { value: "5k2/pp4pp/3bpp2/1P6/8/P2KP3/5PPP/2B5 b", label: "1972 Fischer Spassky game 2" }
+        { value: "5k2/pp4pp/3bpp2/1P6/8/P2KP3/5PPP/2B5 b", label: "1972 Fischer Spassky game 2" },
+        { value: "4k3/8/8/2b5/3N4/8/8/4K3 w - - 0 1", label: "Test en pris" }
+
+        
       ];
       
     return (
