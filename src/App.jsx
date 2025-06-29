@@ -12,7 +12,6 @@ import 'cm-chessboard/assets/extensions/arrows/arrows.css';
 import 'cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css';
 
 export const showSquareControlFunc = (chessboard, square, game) => {
-    console.log('game arg:', game);
     const blackAttackers = game.attackers(square, 'b').length;
     const whiteAttackers = game.attackers(square, 'w').length;
     let netAttackers = blackAttackers - whiteAttackers;
@@ -42,7 +41,6 @@ export const showSquareControlFunc = (chessboard, square, game) => {
         // A piece is en pris if it's attacked and has fewer defenders than attackers
         if (attackers > 0 && attackers > defenders) {
             if (pieceColor === 'w') {
-                console.log(`adding marker circlePrimary to ${square}`);
                 chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
             } else {
                 chessboard.addMarker(MARKER_TYPE.circleDanger, square);
