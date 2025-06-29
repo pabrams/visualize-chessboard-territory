@@ -62,12 +62,11 @@ const App = () => {
     }, [fen]);
 
     useEffect(() => {
-        let board = chessboardRef.current;
-        if (board) {
-            board.destroy();
+        if (chessboardRef.current) {
+            chessboardRef.current.destroy();
+            chessboardRef.current = null;
         }
-        
-        board = new Chessboard(document.getElementById("board"), {
+        chessboardRef.current = new Chessboard(document.getElementById("board"), {
             position: fen,
             assetsUrl: "/cm-chessboard-assets/",
             style: {
@@ -85,7 +84,6 @@ const App = () => {
             ]
         });
 
-        chessboardRef.current = board;
         const inputHandler = (event) => {
             const { type, squareFrom, squareTo, promotion } = event;
             const board = chessboardRef.current;
@@ -135,9 +133,10 @@ const App = () => {
             }
         };
 
-        board.enableMoveInput(inputHandler);
-        showAllSquareControl(board);
+        chessboardRef.current.enableMoveInput(inputHandler);
+        showAllSquareControl(chessboardRef.current);
 
+        // Cleanup function
         return () => {
             if (chessboardRef.current) {
                 chessboardRef.current.destroy();
@@ -145,6 +144,7 @@ const App = () => {
             }
         };
     }, [fen]);
+
 
     useEffect(() => {
         const storedSquareControl = localStorage.getItem("squareControl");
