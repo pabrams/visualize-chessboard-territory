@@ -23,14 +23,12 @@ export const showSquareControlFunc = (chessboard, square, game) => {
     netAttackers = Math.abs(netAttackers);
     const piece = chessboard.getPiece(square) || "";
 
-    // Show square control frames
     if (winningColor === 'b') {
         for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
     } else if (winningColor === 'w') {
         for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
     }
 
-    // Show en pris circles - only if there's a piece and it's actually en pris
     if (piece) {
         const pieceColor = piece.charAt(0);
         const opponentColor = pieceColor === 'w' ? 'b' : 'w';
