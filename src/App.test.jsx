@@ -215,6 +215,309 @@ describe('Chess App', () => {
     });
   });
 
+  describe('En Prise Highlighting', () => {
+    let mockChessInstance;
+
+    beforeEach(() => {
+      mockChessInstance = {
+        fen: vi.fn(),
+        turn: vi.fn().mockReturnValue('w'),
+        move: vi.fn(),
+        moves: vi.fn().mockReturnValue([]),
+        attackers: vi.fn(),
+        load: vi.fn(),
+      };
+      vi.mocked(Chess).mockImplementation(() => mockChessInstance);
+    });
+
+    test('highlights white piece en prise when attacked by black and undefended', async () => {
+      // Setup: White knight on d4 attacked by black bishop, no white defenders
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'd4' && color === 'b') return ['c5']; // Black bishop attacks
+        if (square === 'd4' && color === 'w') return []; // No white defenders
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'd4') return 'wn'; // White knight
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'framePrimary', 'd4'
+        );
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circlePrimary', 'd4'
+        );
+      });
+    });
+
+    test('highlights black piece en prise when attacked by white and undefended', async () => {
+      // Setup: Black queen on e5 attacked by white rook, no black defenders
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'e5' && color === 'w') return ['e1']; // White rook attacks
+        if (square === 'e5' && color === 'b') return []; // No black defenders
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'e5') return 'bq'; // Black queen
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'frameDanger', 'e5'
+        );
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circleDanger', 'e5'
+        );
+      });
+    });
+
+    test('does not highlight defended piece as en prise', async () => {
+      // Setup: White knight on d4 attacked by black but also defended by white
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'd4' && color === 'b') return ['c5']; // Black bishop attacks
+        if (square === 'd4' && color === 'w') return ['c3']; // White knight defends
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'd4') return 'wn'; // White knight
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // Should not highlight as en prise (no circle) because it's defended
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circlePrimary', 'd4'
+        );
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circleDanger', 'd4'
+        );
+      });
+    });
+
+    test('does not highlight piece on unattacked square', async () => {
+      // Setup: White piece on safe square
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        return []; // No attackers
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'a1') return 'wr'; // White rook
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circlePrimary', 'a1'
+        );
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circleDanger', 'a1'
+        );
+      });
+    });
+
+    test('highlights multiple pieces en prise correctly', async () => {
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        // White knight on d4: attacked by black, undefended
+        if (square === 'd4' && color === 'b') return ['c5'];
+        if (square === 'd4' && color === 'w') return [];
+        
+        // Black bishop on f6: attacked by white, undefended  
+        if (square === 'f6' && color === 'w') return ['g5'];
+        if (square === 'f6' && color === 'b') return [];
+        
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'd4') return 'wn'; // White knight
+        if (square === 'f6') return 'bb'; // Black bishop
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // White knight should be highlighted as en prise
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circlePrimary', 'd4'
+        );
+        
+        // Black bishop should be highlighted as en prise
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circleDanger', 'f6'
+        );
+      });
+    });
+
+    test('handles insufficiently defended pieces (more attackers than defenders)', async () => {
+      // Setup: White queen attacked by 2 black pieces, defended by 1 white piece
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'e4' && color === 'b') return ['d5', 'f3']; // 2 black attackers
+        if (square === 'e4' && color === 'w') return ['e1']; // 1 white defender
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'e4') return 'wq'; // White queen
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // Should show net control for black (2-1=1)
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'framePrimary', 'e4'
+        );
+        // White queen should be highlighted as en prise
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circlePrimary', 'e4'
+        );
+      });
+    });
+
+    test('handles overdefended pieces (more defenders than attackers)', async () => {
+      // Setup: Black rook attacked by 1 white piece, defended by 2 black pieces
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'h8' && color === 'w') return ['h1']; // 1 white attacker
+        if (square === 'h8' && color === 'b') return ['g8', 'h7']; // 2 black defenders
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'h8') return 'br'; // Black rook
+        return '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // Should show net control for white (2-1=1, but inverted since black has more)
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'frameDanger', 'h8'
+        );
+        // Black rook should NOT be highlighted as en prise (it's overdefended)
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circleDanger', 'h8'
+        );
+      });
+    });
+
+    test('does not highlight empty squares as en prise', async () => {
+      // Setup: Empty square that's attacked
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'e4' && color === 'b') return ['d5']; // Black attacks empty square
+        if (square === 'e4' && color === 'w') return []; // No white control
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        return ''; // Empty square
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // Should show square control but no en prise circle (no piece)
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'framePrimary', 'e4'
+        );
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circlePrimary', 'e4'
+        );
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circleDanger', 'e4'
+        );
+      });
+    });
+
+    test('en prise highlighting is disabled when showSquareControl is false', async () => {
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        if (square === 'd4' && color === 'b') return ['c5'];
+        if (square === 'd4' && color === 'w') return [];
+        return [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        if (square === 'd4') return 'wn';
+        return '';
+      });
+
+      render(<App />);
+      
+      // Disable square control
+      const checkbox = screen.getByLabelText(/Show square frames/);
+      fireEvent.click(checkbox);
+
+      await waitFor(() => {
+        // Should not show any markers when square control is disabled
+        expect(mockChessboardInstance.removeMarkers).toHaveBeenCalled();
+      });
+    });
+
+    test('complex position with multiple en prise pieces', async () => {
+      // Simulate a complex tactical position
+      mockChessInstance.attackers.mockImplementation((square, color) => {
+        const attacks = {
+          'e4': { b: ['d5', 'f3'], w: ['e1'] }, // White piece, 2 black attackers, 1 white defender
+          'f7': { b: ['f8'], w: ['f1', 'g6'] }, // Black piece, 1 black defender, 2 white attackers
+          'c3': { b: ['b4'], w: ['c1', 'd2'] }, // White piece, 1 black attacker, 2 white defenders
+          'd6': { b: ['c7', 'e7'], w: ['d4'] }  // Black piece, 2 black defenders, 1 white attacker
+        };
+        
+        return attacks[square]?.[color] || [];
+      });
+      
+      mockChessboardInstance.getPiece.mockImplementation((square) => {
+        const pieces = {
+          'e4': 'wq', // White queen (en prise)
+          'f7': 'bp', // Black pawn (en prise) 
+          'c3': 'wn', // White knight (safe)
+          'd6': 'bb'  // Black bishop (safe)
+        };
+        return pieces[square] || '';
+      });
+
+      render(<App />);
+
+      await waitFor(() => {
+        // White queen on e4 should be en prise (2 attackers vs 1 defender)
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circlePrimary', 'e4'
+        );
+        
+        // Black pawn on f7 should be en prise (2 attackers vs 1 defender)
+        expect(mockChessboardInstance.addMarker).toHaveBeenCalledWith(
+          'circleDanger', 'f7'
+        );
+        
+        // White knight on c3 should NOT be en prise (1 attacker vs 2 defenders)
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circlePrimary', 'c3'
+        );
+        
+        // Black bishop on d6 should NOT be en prise (1 attacker vs 2 defenders)
+        expect(mockChessboardInstance.addMarker).not.toHaveBeenCalledWith(
+          'circleDanger', 'd6'
+        );
+      });
+    });
+  });
+
   describe('Chess Game Logic', () => {
     let mockChessInstance;
 
