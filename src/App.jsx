@@ -93,6 +93,7 @@ const App = () => {
                 showAllSquareControl(board);
             }
         };
+
         board.enableMoveInput(inputHandler);
         showAllSquareControl(board);
 
