@@ -163,7 +163,7 @@ const App = () => {
             for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
         }
 
-        // Show en pris circles - only if there's a piece and it's actually en prise
+        // Show en pris circles - only if there's a piece and it's actually en pris
         if (piece) {
             const pieceColor = piece.charAt(0);
             const opponentColor = pieceColor === 'w' ? 'b' : 'w';
