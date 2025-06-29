@@ -6,7 +6,6 @@ import { vi } from 'vitest';
 import App from './App';
 import { Chess } from 'chess.js';
 
-// ✅ Declare and initialize up front
 const mockChessboardInstance = {
   setPosition: vi.fn().mockResolvedValue(),
   enableMoveInput: vi.fn(),
@@ -22,7 +21,6 @@ const mockChessboardInstance = {
   state: { moveInputProcess: Promise.resolve() }
 };
 
-// ✅ This block is now safe because mockChessboardInstance is defined already
 vi.mock('cm-chessboard', () => ({
   Chessboard: vi.fn().mockImplementation(() => mockChessboardInstance),
   INPUT_EVENT_TYPE: {
@@ -70,7 +68,6 @@ vi.mock('cm-chessboard/src/extensions/arrows/Arrows', () => ({
 
 vi.mock('chess.js');
 
-// Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -249,10 +246,9 @@ describe('Chess App', () => {
       let inputHandler;
       let restrictedToColor = null;
       
-      // Mock enableMoveInput to track the color restriction
       mockChessboardInstance.enableMoveInput.mockImplementation((handler, colorRestriction) => {
         inputHandler = handler;
-        restrictedToColor = colorRestriction; // This will be 'w' with the bug, undefined without
+        restrictedToColor = colorRestriction;
       });
       
       render(<App />);
