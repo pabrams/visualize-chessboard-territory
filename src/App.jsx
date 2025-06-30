@@ -55,19 +55,18 @@ const App = () => {
     const chessboardRef = useRef(null);
     const gameRef = useRef(null);
 
-    const loadGame = (game) => {
-        game.load(game.fen());
-    }
-
     useEffect(() => {
         gameRef.current = new Chess(fen);
     }, [fen]);
 
     useEffect(() => {
+        // Clean up existing board if it exists
         if (chessboardRef.current) {
             chessboardRef.current.destroy();
             chessboardRef.current = null;
         }
+        
+        // Create new board and assign to ref
         chessboardRef.current = new Chessboard(document.getElementById("board"), {
             position: fen,
             assetsUrl: "/cm-chessboard-assets/",
@@ -92,38 +91,36 @@ const App = () => {
             const game = gameRef.current;
 
             if (type === INPUT_EVENT_TYPE.movingOverSquare) {
-                console.log(`MOVING OVER SQUARE ${squareFrom}`);
                 showControlArrows(board, squareTo);
             }
+
             if (type === INPUT_EVENT_TYPE.moveInputStarted) {
-                console.log(`moveInputStarted ${squareFrom}`);
                 const moves = game.moves({ square: squareFrom, verbose: true });
                 removeAllMarkers();
-                showAllSquareControl(board);
                 board.addLegalMovesMarkers(moves);
+
                 board.addMarker(MARKER_TYPE.circle, squareFrom);
                 return moves.length > 0;
             }
 
             if (type === INPUT_EVENT_TYPE.validateMoveInput) {
-                console.log(`validateMoveInput ${squareFrom} to ${squareTo}`);
                 const move = { from: squareFrom, to: squareTo, promotion };
-                
-                let result = null;
-                try {
-                    result = game.move(move);
-                } catch (e) {
-                    console.error(e);
-                }
+                const result = game.move(move);
                 if (result) {
-                    loadGame(game);
+                    game.load(game.fen());
+                    board.setPosition(game.fen()).then(() => {
+                        showAllSquareControl(board);
+                    });
                 } else {
                     const possibleMoves = game.moves({ square: squareFrom, verbose: true });
                     if (possibleMoves.some(m => m.promotion && m.to === squareTo)) {
                         board.showPromotionDialog(squareTo, game.turn(), (result) => {
                             if (result.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) {
                                 game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
-                                loadGame(game);
+                                game.load(game.fen()); // Add this line
+                                board.setPosition(game.fen()).then(() => {
+                                    showAllSquareControl(board);
+                                });
                             }
                         });
                         return true;
@@ -133,7 +130,6 @@ const App = () => {
             }
 
             if (type === INPUT_EVENT_TYPE.moveInputFinished) {
-                console.log(`moveInputFinished ${squareFrom} to ${squareTo}`);
                 showAllSquareControl(board);
             }
         };
