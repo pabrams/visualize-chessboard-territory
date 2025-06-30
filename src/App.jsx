@@ -16,10 +16,10 @@ export const showSquareControlFunc = (chessboard, square, game) => {
     const whiteAttackers = game.attackers(square, 'w').length;
     let netAttackers = blackAttackers - whiteAttackers;
     let winningColor = "";
-    
+
     if (netAttackers > 0) winningColor = 'b';
     else if (netAttackers < 0) winningColor = 'w';
-    
+
     netAttackers = Math.abs(netAttackers);
     const piece = chessboard.getPiece(square) || "";
 
