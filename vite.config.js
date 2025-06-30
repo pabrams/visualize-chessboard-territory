@@ -8,6 +8,10 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
   test: {
     reporter: ['basic'],
     globals: true,
@@ -27,6 +31,6 @@ export default defineConfig({
         find: /^cm-chessboard\/(.*)$/,
         replacement: path.resolve(__dirname, 'node_modules/cm-chessboard/$1')
       }
-    ],
+    ]
   },
 })
