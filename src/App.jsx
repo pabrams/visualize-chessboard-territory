@@ -51,6 +51,7 @@ const App = () => {
     const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
     const [showSquareControl, setShowSquareControl] = useState(true);
     const [showHoverControl, setShowHoverControl] = useState(true);
+    const [lastPosition, setLastPosition] = useState(null);
 
     const chessboardRef = useRef(null);
     const gameRef = useRef(null);
@@ -58,7 +59,12 @@ const App = () => {
     useEffect(() => {
         gameRef.current = new Chess(fen);
     }, [fen]);
-
+    useEffect(() => {
+        const savedLastPosition = localStorage.getItem('lastPosition');
+        if (savedLastPosition) {
+            setLastPosition(savedLastPosition);
+        }
+    }, []);
     useEffect(() => {
         // Clean up existing board if it exists
         if (chessboardRef.current) {
@@ -200,7 +206,9 @@ const App = () => {
     const handleFenSelectChange = (e) => {
         const newFen = e.target.value;
         setFen(newFen);
+        setLastPosition(newFen);
         localStorage.setItem("FEN", newFen);
+        localStorage.setItem("lastPosition", newFen);
     };
 
     const presetPositions = [

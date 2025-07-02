@@ -3,14 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "npm run copy-assets && vite",
-    "build": "npm run copy-assets && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest",
-    "copy-assets": "cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
-  },
+"scripts": {
+  "dev": "vite",
+  "dev-container": "npm run copy-assets && vite",
+  "build": "./build_docker.sh",
+  "preview": "vite preview",
+  "test": "vitest",
+  "lint": "eslint .",
+  "copy-assets": "cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
+},
   "dependencies": {
     "chess.js": "^1.4.0",
     "cm-chessboard": "^8.7.8",
