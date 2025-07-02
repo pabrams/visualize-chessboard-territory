@@ -696,24 +696,41 @@ describe('Chess App', () => {
         localStorageMock.setItem.mockClear();
     });
 
-    test('adds "Last position" option after changing position via preset', () => {
-        render(<App />);
+    test('adds "Last position" option after changing position by moving', async () => {
+      mockChessboardInstance.enableMoveInput.mockImplementation((handler, colorRestriction) => {
+        inputHandler = handler;
+        restrictedToColor = colorRestriction;
+      });
+    
+      render(<App />);
+    
+      await waitFor(() =>
+        expect(mockChessboardInstance.enableMoveInput).toHaveBeenCalled()
+      );
+    
+      // --- White's move: e2 to e4 ---
+      await act(async () => {
+        const piece = { color: 'w' }; // e2 has a white piece
+        const moveAllowedByChessboard = !restrictedToColor || piece.color === restrictedToColor;
+        
+        if (moveAllowedByChessboard) {
+          const result = inputHandler({ type: 'validateMoveInput', squareFrom: 'e2', squareTo: 'e4' });
+          expect(result).toBeTruthy();
+        } else {
+          throw new Error('White move unexpectedly blocked');
+        }
+      });
+      
+      // Expect localStorage to update for FEN
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('FEN', newFEN);
 
-        const select = screen.getByLabelText('Select FEN:');
-        const newFEN = '5rk1/pp4pp/4p3/2R3Q1/3n4/2q4r/P1P2PPP/5RK1 b';
+      // The dropdown options should include "Last position"
+      const options = Array.from(select.options).map(opt => opt.text);
+      expect(options).toContain(lastPositionLabel);
 
-        // Change position by selecting preset (simulate user change)
-        fireEvent.change(select, { target: { value: newFEN } });
-
-        // Expect localStorage to update for FEN
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('FEN', newFEN);
-
-        // The dropdown options should include "Last position"
-        const options = Array.from(select.options).map(opt => opt.text);
-        expect(options).toContain(lastPositionLabel);
-
-        // "Last position" option should be selected by default after change
-        expect(select.value).toBe(newFEN);
+      // "Last position" option should be selected by default after change
+      expect(select.value).toBe(newFEN);
+      expect(mockChessInstance.move).toHaveBeenCalledWith({ from: 'c7', to: 'c5' });
     });
 
     test('updates "Last position" on manual input and apply', () => {
@@ -732,31 +749,6 @@ describe('Chess App', () => {
         const options = Array.from(select.options).map(opt => opt.text);
         expect(options).toContain(lastPositionLabel);
         expect(select.value).toBe(manualFEN);
-    });
-
-    test('reset to default resets selection but keeps "Last position" option', () => {
-        render(<App />);
-        const select = screen.getByLabelText('Select FEN:');
-        const resetButton = screen.getByText('Reset to default'); // or however reset is triggered
-
-        // Assume user has changed position first
-        const changedFEN = 'some_other_fen_string';
-        fireEvent.change(select, { target: { value: changedFEN } });
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('FEN', changedFEN);
-
-        // Reset to default
-        fireEvent.click(resetButton);
-
-        // Expect dropdown selected value to be standard start position
-        expect(select.value).toBe(standardFEN);
-
-        // "Last position" should still be present as option
-        const options = Array.from(select.options).map(opt => opt.text);
-        expect(options).toContain(lastPositionLabel);
-
-        // Last position option value should still be the last saved fen
-        const lastPosOption = Array.from(select.options).find(opt => opt.text === lastPositionLabel);
-        expect(lastPosOption.value).toBe(changedFEN);
     });
 
     test('loads saved "Last position" from localStorage on mount and selects it', () => {

@@ -163,7 +163,7 @@ const App = () => {
             setShowHoverControl(storedHoverControl === "1");
         }
         const storedFen = localStorage.getItem("FEN");
-        if (storedFen !== null) {
+        if (storedFen !== null) { 
             setFen(storedFen);
         }
     }, []);
