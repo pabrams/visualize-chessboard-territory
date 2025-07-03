@@ -9,12 +9,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "copy-assets": "mkdir public && cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
+    "copy-assets": "echo 'No assets to copy for react-chessboard'"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
-    "cm-chessboard": "^8.7.8",
     "react": "^19.1.0",
+    "react-chessboard": "^4.5.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {

@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Chessboard, INPUT_EVENT_TYPE, COLOR, BORDER_TYPE } from 'cm-chessboard';
-import { PromotionDialog, PROMOTION_DIALOG_RESULT_TYPE } from 'cm-chessboard/src/extensions/promotion-dialog/PromotionDialog';
-import { Markers, MARKER_TYPE } from 'cm-chessboard/src/extensions/markers/Markers';
-import { Arrows, ARROW_TYPE } from 'cm-chessboard/src/extensions/arrows/Arrows';
-import { Accessibility } from "cm-chessboard/src/extensions/accessibility/Accessibility";
+import { Chessboard } from 'react-chessboard';
 import { Chess, SQUARES } from 'chess.js';
 
-import 'cm-chessboard/assets/chessboard.css';
-import 'cm-chessboard/assets/extensions/markers/markers.css';
-import 'cm-chessboard/assets/extensions/arrows/arrows.css';
-import 'cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css';
+import './App.css';
 
 export const showSquareControlFunc = (chessboard, square, game) => {
     const blackAttackers = game.attackers(square, 'b').length;
@@ -24,9 +17,15 @@ export const showSquareControlFunc = (chessboard, square, game) => {
     const piece = chessboard.getPiece(square) || "";
 
     if (winningColor === 'b') {
-        for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
+        for (let i = 0; i < netAttackers; i++) {
+            // For react-chessboard, we'll use custom markers
+            // This is a placeholder - we'll need to implement custom markers
+        }
     } else if (winningColor === 'w') {
-        for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
+        for (let i = 0; i < netAttackers; i++) {
+            // For react-chessboard, we'll use custom markers
+            // This is a placeholder - we'll need to implement custom markers
+        }
     }
 
     if (piece) {
@@ -38,11 +37,8 @@ export const showSquareControlFunc = (chessboard, square, game) => {
 
         // A piece is en pris if it's attacked and has fewer defenders than attackers
         if (attackers > 0 && attackers > defenders) {
-            if (pieceColor === 'w') {
-                chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
-            } else {
-                chessboard.addMarker(MARKER_TYPE.circleDanger, square);
-            }
+            // For react-chessboard, we'll use custom markers
+            // This is a placeholder - we'll need to implement custom markers
         }
     }
 };
@@ -52,100 +48,12 @@ const App = () => {
     const [showSquareControl, setShowSquareControl] = useState(true);
     const [showHoverControl, setShowHoverControl] = useState(true);
 
-    const chessboardRef = useRef(null);
     const gameRef = useRef(null);
+    const chessboardRef = useRef(null);
 
     useEffect(() => {
         gameRef.current = new Chess(fen);
     }, [fen]);
-
-    useEffect(() => {
-        // Clean up existing board if it exists
-        if (chessboardRef.current) {
-            chessboardRef.current.destroy();
-            chessboardRef.current = null;
-        }
-        
-        // Create new board and assign to ref
-        chessboardRef.current = new Chessboard(document.getElementById("board"), {
-            position: fen,
-            assetsUrl: "/cm-chessboard-assets/",
-            style: {
-                cssClass: "black-and-white",
-                borderType: BORDER_TYPE.frame,
-                pieces: { file: "pieces/staunty.svg" },
-                animationDuration: 300
-            },
-            orientation: COLOR.white,
-            extensions: [
-                { class: Markers },
-                { class: Arrows },
-                { class: PromotionDialog },
-                { class: Accessibility, props: { visuallyHidden: true } }
-            ]
-        });
-
-        const inputHandler = (event) => {
-            const { type, squareFrom, squareTo, promotion } = event;
-            const board = chessboardRef.current;
-            const game = gameRef.current;
-
-            if (type === INPUT_EVENT_TYPE.movingOverSquare) {
-                showControlArrows(board, squareTo);
-            }
-
-            if (type === INPUT_EVENT_TYPE.moveInputStarted) {
-                const moves = game.moves({ square: squareFrom, verbose: true });
-                removeAllMarkers();
-                board.addLegalMovesMarkers(moves);
-
-                board.addMarker(MARKER_TYPE.circle, squareFrom);
-                return moves.length > 0;
-            }
-
-            if (type === INPUT_EVENT_TYPE.validateMoveInput) {
-                const move = { from: squareFrom, to: squareTo, promotion };
-                const result = game.move(move);
-                if (result) {
-                    game.load(game.fen());
-                    board.setPosition(game.fen()).then(() => {
-                        showAllSquareControl(board);
-                    });
-                } else {
-                    const possibleMoves = game.moves({ square: squareFrom, verbose: true });
-                    if (possibleMoves.some(m => m.promotion && m.to === squareTo)) {
-                        board.showPromotionDialog(squareTo, game.turn(), (result) => {
-                            if (result.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) {
-                                game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
-                                game.load(game.fen()); // Add this line
-                                board.setPosition(game.fen()).then(() => {
-                                    showAllSquareControl(board);
-                                });
-                            }
-                        });
-                        return true;
-                    }
-                }
-                return result;
-            }
-
-            if (type === INPUT_EVENT_TYPE.moveInputFinished) {
-                showAllSquareControl(board);
-            }
-        };
-
-        chessboardRef.current.enableMoveInput(inputHandler);
-        showAllSquareControl(chessboardRef.current);
-
-        // Cleanup function
-        return () => {
-            if (chessboardRef.current) {
-                chessboardRef.current.destroy();
-                chessboardRef.current = null;
-            }
-        };
-    }, [fen]);
-
 
     useEffect(() => {
         const storedSquareControl = localStorage.getItem("squareControl");
@@ -164,38 +72,31 @@ const App = () => {
 
     useEffect(() => {
         if (chessboardRef.current) {
-            showAllSquareControl(chessboardRef.current);
+            showAllSquareControl();
         }
     }, [showSquareControl]);
 
-    const removeAllMarkers = () => {
-        if (chessboardRef.current) {
-          chessboardRef.current.removeMarkers(MARKER_TYPE.circle);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.square);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.frame);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.framePrimary);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.frameDanger);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.dot);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.circlePrimary);
-          chessboardRef.current.removeMarkers(MARKER_TYPE.circleDanger);
-        }
-    };
-
-    const showAllSquareControl = (chessboard) => {
-        removeAllMarkers();
+    const showAllSquareControl = () => {
         if (showSquareControl) {
-          SQUARES.forEach(square => showSquareControlFunc(chessboard, square, gameRef.current));
+            SQUARES.forEach(square => showSquareControlFunc(chessboardRef.current, square, gameRef.current));
         }
     };
 
-    const showControlArrows = (chessboard, square) => {
-        if (showHoverControl) {
-            chessboard.removeArrows();
-            gameRef.current.attackers(square, 'b').forEach(attacker => chessboard.addArrow(ARROW_TYPE.default, attacker, square));
-            gameRef.current.attackers(square, 'w').forEach(attacker => chessboard.addArrow(ARROW_TYPE.danger, attacker, square));
+    const handleMove = (sourceSquare, targetSquare, piece) => {
+        const move = gameRef.current.move({
+            from: sourceSquare,
+            to: targetSquare,
+            promotion: piece ? piece[1] : undefined
+        });
+
+        if (move) {
+            setFen(gameRef.current.fen());
+            showAllSquareControl();
+            return true;
         }
+        return false;
     };
-    
+
     const handleFenSelectChange = (e) => {
         const newFen = e.target.value;
         setFen(newFen);
@@ -210,11 +111,38 @@ const App = () => {
         { value: "r1b2r1k/4qp1p/p2ppb1Q/4nP2/1p1NP3/2N5/PPP4P/2KR1BR1 w", label: "1965 Kholmov Bronstein" },
         { value: "5k2/pp4pp/3bpp2/1P6/8/P2KP3/5PPP/2B5 b", label: "1972 Fischer Spassky game 2" },
         { value: "4k3/8/8/2b5/3N4/8/8/4K3 w - - 0 1", label: "Test en pris" }
-      ];
-      
+    ];
+
+    const customSquareStyles = {};
+    const customPieceStyles = {};
+
+    // For now, we'll use basic styling since react-chessboard doesn't have built-in markers
+    // We can add custom styling here
+
     return (
         <div className="container">
-            <div className="board board-large left-element" id="board" onMouseLeave={() => chessboardRef.current?.removeArrows()}></div>
+            <div className="board board-large left-element">
+                <Chessboard
+                    ref={chessboardRef}
+                    position={fen}
+                    onPieceDrop={handleMove}
+                    customSquareStyles={customSquareStyles}
+                    customPieceStyles={customPieceStyles}
+                    boardWidth={600}
+                    boardOrientation="white"
+                    showBoardNotation={true}
+                    draggable={true}
+                    onMouseOverSquare={(square) => {
+                        if (showHoverControl) {
+                            // For react-chessboard, we need to implement hover effects differently
+                            // This is a placeholder for now
+                        }
+                    }}
+                    onMouseOutSquare={() => {
+                        // Clear hover effects
+                    }}
+                />
+            </div>
             <div className="right-element">
                 <h1>chessboard with square control</h1>
                 <ul>
@@ -270,7 +198,7 @@ const App = () => {
                 <hr />
                 Source <a href="https://github.com/pabrams/marked-chessboard">github</a>
                 <br />
-                Uses <a href="https://github.com/shaack/cm-chessboard">cm-chessboard</a> and <a href="https://github.com/jhlywa/chess.js">chess.js</a>.
+                Uses <a href="https://github.com/willb335/react-chessboard">react-chessboard</a> and <a href="https://github.com/jhlywa/chess.js">chess.js</a>.
             </div>
         </div>
     );
