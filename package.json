@@ -4,16 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run copy-assets && vite",
     "build": "npm run copy-assets && vite build",
+    "docker:build": "./build_docker.sh chess",
+    "test": "vitest",
+    "docker:test": "docker run -t chess ./run_tests.sh",
+    "dev": "npm run copy-assets && vite",
+    "docker:dev": "docker run -it -p 5173:5173 --entrypoint sh chess ./run_dev.sh",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
     "copy-assets": "cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
-    "cm-chessboard": "^8.7.8",
+    "react-chessboard": "latest",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

@@ -1,11 +1,18 @@
 // App.test.jsx
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import App from './App';
 import { Chess } from 'chess.js';
-import { showSquareControlFunc } from './App';
+
+beforeAll(() => {
+  global.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+});
 
 const mockChessboardInstance = {
   setPosition: vi.fn().mockResolvedValue(),
