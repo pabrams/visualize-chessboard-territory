@@ -298,8 +298,6 @@ describe('Chess App', () => {
 
       // Assert that e4 got marked as en prise
       const calls = mockChessboardInstance.addMarker.mock.calls;
-      console.log('addMarker calls:', calls);
-
       const e4Marked = calls.some(
         ([type, square]) => type === 'circlePrimary' && square === 'e4'
       );

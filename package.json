@@ -4,12 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run copy-assets && vite",
+    "dev": "vite",
     "build": "npm run copy-assets && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "copy-assets": "cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
+    "copy-assets": "mkdir public && cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
   },
   "dependencies": {
     "chess.js": "^1.4.0",

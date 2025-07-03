@@ -182,7 +182,6 @@ const App = () => {
     };
 
     const showAllSquareControl = (chessboard) => {
-        console.log("showAllSquareControl");
         removeAllMarkers();
         if (showSquareControl) {
           SQUARES.forEach(square => showSquareControlFunc(chessboard, square, gameRef.current));
@@ -211,8 +210,6 @@ const App = () => {
         { value: "r1b2r1k/4qp1p/p2ppb1Q/4nP2/1p1NP3/2N5/PPP4P/2KR1BR1 w", label: "1965 Kholmov Bronstein" },
         { value: "5k2/pp4pp/3bpp2/1P6/8/P2KP3/5PPP/2B5 b", label: "1972 Fischer Spassky game 2" },
         { value: "4k3/8/8/2b5/3N4/8/8/4K3 w - - 0 1", label: "Test en pris" }
-
-        
       ];
       
     return (
