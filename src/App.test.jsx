@@ -756,6 +756,23 @@ describe('Chess App', () => {
       expect(options).toContain('Last position');
     });
 
+    test('adds "Last position" if only lastPosition is set in localStorage', async () => {
+      const savedLastPosition = '8/8/8/8/8/8/8/R3K2R w KQ - 0 1';
+
+      // Only lastPosition is set, FEN is null
+      localStorageMock.getItem.mockImplementation((key) => {
+        if (key === 'lastPosition') return savedLastPosition;
+        return null;
+      });
+
+      render(<App />);
+
+      const select = await screen.findByLabelText(/select fen/i);
+      const options = Array.from(select.options).map((opt) => opt.text);
+
+      expect(options).toContain('Last position');
+    });
+
     test('updates "Last position" on manual input and apply', () => {
         render(<App />);
         const input = screen.getByLabelText('Or enter manually:');

@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Chessboard, INPUT_EVENT_TYPE, COLOR, BORDER_TYPE } from 'cm-chessboard';
 import { PromotionDialog, PROMOTION_DIALOG_RESULT_TYPE } from 'cm-chessboard/src/extensions/promotion-dialog/PromotionDialog';
@@ -113,8 +114,11 @@ const App = () => {
                 const move = { from: squareFrom, to: squareTo, promotion };
                 const result = game.move(move);
                 if (result) {
-                    game.load(game.fen());
-                    board.setPosition(game.fen()).then(() => {
+                    const newFen = game.fen();
+                    localStorage.setItem("lastPosition", newFen);
+                    setLastPosition(newFen);
+                    game.load(newFen);
+                    board.setPosition(newFen).then(() => {
                         showAllSquareControl(board);
                     });
                 } else {
@@ -123,8 +127,11 @@ const App = () => {
                         board.showPromotionDialog(squareTo, game.turn(), (result) => {
                             if (result.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) {
                                 game.move({ from: squareFrom, to: squareTo, promotion: result.piece.charAt(1) });
-                                game.load(game.fen()); // Add this line
-                                board.setPosition(game.fen()).then(() => {
+                                const newFen = game.fen();
+                                localStorage.setItem("lastPosition", newFen);
+                                setLastPosition(newFen);
+                                game.load(newFen);
+                                board.setPosition(newFen).then(() => {
                                     showAllSquareControl(board);
                                 });
                             }
@@ -188,7 +195,6 @@ const App = () => {
     };
 
     const showAllSquareControl = (chessboard) => {
-        console.log("showAllSquareControl");
         removeAllMarkers();
         if (showSquareControl) {
           SQUARES.forEach(square => showSquareControlFunc(chessboard, square, gameRef.current));
@@ -206,9 +212,6 @@ const App = () => {
     const handleFenSelectChange = (e) => {
         const newFen = e.target.value;
         setFen(newFen);
-        setLastPosition(newFen);
-        localStorage.setItem("FEN", newFen);
-        localStorage.setItem("lastPosition", newFen);
     };
 
     const presetPositions = [
@@ -219,10 +222,13 @@ const App = () => {
         { value: "r1b2r1k/4qp1p/p2ppb1Q/4nP2/1p1NP3/2N5/PPP4P/2KR1BR1 w", label: "1965 Kholmov Bronstein" },
         { value: "5k2/pp4pp/3bpp2/1P6/8/P2KP3/5PPP/2B5 b", label: "1972 Fischer Spassky game 2" },
         { value: "4k3/8/8/2b5/3N4/8/8/4K3 w - - 0 1", label: "Test en pris" }
-
-        
       ];
-      
+      const options = [
+        ...presetPositions,
+        ...(lastPosition
+            ? [{ value: lastPosition, label: "Last position" }]
+            : [])
+      ];
     return (
         <div className="container">
             <div className="board board-large left-element" id="board" onMouseLeave={() => chessboardRef.current?.removeArrows()}></div>
@@ -261,7 +267,11 @@ const App = () => {
                             </td>
                             <td>
                                 <select id="ddFEN" size="1" value={fen} onChange={handleFenSelectChange}>
-                                    {presetPositions.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                {options.map(p => (
+                                    <option key={p.label} value={p.value}>
+                                    {p.label}
+                                    </option>
+                                ))}
                                 </select>
                             </td>
                         </tr>
