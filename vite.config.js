@@ -17,27 +17,20 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
-    css: {
-      modules: {
-        classNameStrategy: 'non-scoped',
-        localsConvention: 'camelCase'
-      }
-    },
-    // Mock CSS and static assets
-    transformMode: {
-      web: [/\.[jt]sx?$/, /\.css$/],
-      ssr: [/\.[jt]sx?$/]
-    },
-    deps: {
-      external: ['react-chessboard/dist/chessboard.css'],
-      inline: ['react-chessboard']
-    },
-    mockReset: true,
-    clearMocks: true,
-    restoreMocks: true
+    css: true,
   },
-  define: {
-    'process.env.NODE_ENV': JSON.stringify('test')
-  }
-
+  resolve: {
+    alias: [
+      // Main chessboard import - point to the actual entry point
+      {
+        find: /^cm-chessboard$/,
+        replacement: path.resolve(__dirname, 'node_modules/cm-chessboard/src/Chessboard.js')
+      },
+      // Handle sub-path imports
+      {
+        find: /^cm-chessboard\/(.*)$/,
+        replacement: path.resolve(__dirname, 'node_modules/cm-chessboard/$1')
+      }
+    ]
+  },
 })
