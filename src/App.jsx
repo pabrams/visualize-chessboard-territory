@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, SQUARES } from 'chess.js';
 
+import 'react-chessboard/dist/chessboard.css';
+
 export const showSquareControlFunc = (chessboard, square, game) => {
     const blackAttackers = game.attackers(square, 'b').length;
     const whiteAttackers = game.attackers(square, 'w').length;
