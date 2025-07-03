@@ -7,6 +7,66 @@ import App from './App';
 import { Chess } from 'chess.js';
 import { showSquareControlFunc } from './App';
 
+const mockChessboardInstance = {
+  setPosition: vi.fn().mockResolvedValue(),
+  enableMoveInput: vi.fn(),
+  disableMoveInput: vi.fn(),
+  addMarker: vi.fn(),
+  removeMarkers: vi.fn(),
+  removeArrows: vi.fn(),
+  addArrow: vi.fn(),
+  getPiece: vi.fn(),
+  addLegalMovesMarkers: vi.fn(),
+  showPromotionDialog: vi.fn(),
+  destroy: vi.fn(),
+  state: { moveInputProcess: Promise.resolve() }
+};
+
+vi.mock('cm-chessboard', () => ({
+  Chessboard: vi.fn().mockImplementation(() => mockChessboardInstance),
+  INPUT_EVENT_TYPE: {
+    movingOverSquare: 'movingOverSquare',
+    moveInputStarted: 'moveInputStarted',
+    validateMoveInput: 'validateMoveInput',
+    moveInputFinished: 'moveInputFinished'
+  },
+  COLOR: { white: 'white', black: 'black' },
+  BORDER_TYPE: { frame: 'frame' }
+}));
+
+vi.mock('cm-chessboard/src/extensions/accessibility/Accessibility', () => ({
+  Accessibility: vi.fn()
+}));
+
+vi.mock('cm-chessboard/src/extensions/promotion-dialog/PromotionDialog', () => ({
+  PromotionDialog: vi.fn(),
+  PROMOTION_DIALOG_RESULT_TYPE: {
+    pieceSelected: 'pieceSelected'
+  }
+}));
+
+vi.mock('cm-chessboard/src/extensions/markers/Markers', () => ({
+  Markers: vi.fn(),
+  MARKER_TYPE: {
+    square: 'square',
+    frame: 'frame',
+    dot: 'dot',
+    circle: 'circle',
+    framePrimary: 'framePrimary',
+    frameDanger: 'frameDanger',
+    circlePrimary: 'circlePrimary',
+    circleDanger: 'circleDanger'
+  }
+}));
+
+vi.mock('cm-chessboard/src/extensions/arrows/Arrows', () => ({
+  Arrows: vi.fn(),
+  ARROW_TYPE: {
+    default: 'default',
+    danger: 'danger'
+  }
+}));
+
 vi.mock('chess.js');
 
 const localStorageMock = {
@@ -155,6 +215,7 @@ describe('Chess App', () => {
       expect(screen.getByText('1972 Fischer Spassky game 2')).toBeInTheDocument();
     });
   });
+
 
   describe('Chess Game Logic', () => {
     let mockChessInstance;

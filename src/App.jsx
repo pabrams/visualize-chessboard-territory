@@ -182,7 +182,6 @@ const App = () => {
     };
 
     const showAllSquareControl = (chessboard) => {
-        console.log("showAllSquareControl");
         removeAllMarkers();
         if (showSquareControl) {
           SQUARES.forEach(square => showSquareControlFunc(chessboard, square, gameRef.current));
