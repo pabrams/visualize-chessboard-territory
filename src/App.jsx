@@ -1,45 +1,6 @@
-// src/App.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import { Chessboard, Promotion } from 'react-chessboard';  // Import Promotion for custom promotion
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Chessboard } from 'react-chessboard';
 import { Chess, SQUARES } from 'chess.js';
-
-import './App.css';  // Keep existing styles
-
-export const showSquareControlFunc = (chessboard, square, game) => {
-    const blackAttackers = game.attackers(square, 'b').length;
-    const whiteAttackers = game.attackers(square, 'w').length;
-    let netAttackers = blackAttackers - whiteAttackers;
-    let winningColor = "";
-
-    if (netAttackers > 0) winningColor = 'b';
-    else if (netAttackers < 0) winningColor = 'w';
-
-    netAttackers = Math.abs(netAttackers);
-    const piece = chessboard.getPiece(square) || "";
-
-    if (winningColor === 'b') {
-        for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.framePrimary, square);
-    } else if (winningColor === 'w') {
-        for (let i = 0; i < netAttackers; i++) chessboard.addMarker(MARKER_TYPE.frameDanger, square);
-    }
-
-    if (piece) {
-        const pieceColor = piece.charAt(0);
-        const opponentColor = pieceColor === 'w' ? 'b' : 'w';
-        
-        const attackers = game.attackers(square, opponentColor).length;
-        const defenders = game.attackers(square, pieceColor).length;
-
-        // A piece is en pris if it's attacked and has fewer defenders than attackers
-        if (attackers > 0 && attackers > defenders) {
-            if (pieceColor === 'w') {
-                chessboard.addMarker(MARKER_TYPE.circlePrimary, square);
-            } else {
-                chessboard.addMarker(MARKER_TYPE.circleDanger, square);
-            }
-        }
-    }
-};
 
 const App = () => {
     const [fen, setFen] = useState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
@@ -47,18 +8,23 @@ const App = () => {
     const [showHoverControl, setShowHoverControl] = useState(true);
     const [lastPosition, setLastPosition] = useState(null);
     const [hoveredSquare, setHoveredSquare] = useState(null);
+    const [moveFrom, setMoveFrom] = useState(null);
+    const [rightClickedSquares, setRightClickedSquares] = useState({});
+    const [optionSquares, setOptionSquares] = useState({});
 
     const gameRef = useRef(null);
 
     useEffect(() => {
         gameRef.current = new Chess(fen);
     }, [fen]);
+
     useEffect(() => {
         const savedLastPosition = localStorage.getItem('lastPosition');
         if (savedLastPosition) {
             setLastPosition(savedLastPosition);
         }
     }, []);
+
     useEffect(() => {
         const storedSquareControl = localStorage.getItem("squareControl");
         if (storedSquareControl !== null) {
@@ -74,77 +40,169 @@ const App = () => {
         }
     }, []);
 
-    const handlePieceDrop = (source, target, piece, newPosition, oldPosition, orientation) => {
-        const game = gameRef.current;
-        const move = { from: source, to: target, promotion: piece?.charAt(1) || null };
-        const result = game.move(move);
-        if (result) {
-            const newFen = game.fen();
-            localStorage.setItem("lastPosition", newFen);
-            setLastPosition(newFen);
-            setFen(newFen);
-            return true;
+    const getSquareControlInfo = (square) => {
+        if (!gameRef.current) return { netAttackers: 0, winningColor: '', isEnPrise: false, pieceColor: null };
+        
+        const blackAttackers = gameRef.current.attackers(square, 'b').length;
+        const whiteAttackers = gameRef.current.attackers(square, 'w').length;
+        let netAttackers = blackAttackers - whiteAttackers;
+        let winningColor = "";
+
+        if (netAttackers > 0) winningColor = 'b';
+        else if (netAttackers < 0) winningColor = 'w';
+
+        netAttackers = Math.abs(netAttackers);
+        
+        const piece = gameRef.current.get(square);
+        let isEnPrise = false;
+        let pieceColor = null;
+
+        if (piece) {
+            pieceColor = piece.color;
+            const opponentColor = pieceColor === 'w' ? 'b' : 'w';
+            
+            const attackers = gameRef.current.attackers(square, opponentColor).length;
+            const defenders = gameRef.current.attackers(square, pieceColor).length;
+
+            // A piece is en pris if it's attacked and has fewer defenders than attackers
+            isEnPrise = attackers > 0 && attackers > defenders;
         }
-        return false;
+
+        return { netAttackers, winningColor, isEnPrise, pieceColor };
     };
 
-    const customBoardStyle = (square) => {
+    const customSquareStyles = useMemo(() => {
         if (!showSquareControl) return {};
         
-        const game = gameRef.current;
-        const blackAttackers = game.attackers(square, 'b').length;
-        const whiteAttackers = game.attackers(square, 'w').length;
-        let netAttackers = blackAttackers - whiteAttackers;
-        let borderWidth = 0;
+        const styles = {};
         
-        if (netAttackers > 0) {
-            borderWidth = Math.min(3, netAttackers);
-        } else if (netAttackers < 0) {
-            borderWidth = Math.min(3, Math.abs(netAttackers));
-        }
-        
-        const style = {};
-        if (borderWidth > 0) {
+        SQUARES.forEach(square => {
+            const { netAttackers, winningColor, isEnPrise, pieceColor } = getSquareControlInfo(square);
+            
+            let squareStyle = {};
+            
+            // Add frame for square control
             if (netAttackers > 0) {
-                // Black control (blue)
-                style.border = `${borderWidth}px solid #0000ff`;
-                style.borderRightWidth = `${borderWidth}px`;
-                style.borderLeftWidth = `${borderWidth}px`;
-                style.borderTopWidth = `${borderWidth}px`;
-                style.borderBottomWidth = `${borderWidth}px`;
-            } else {
-                // White control (red)
-                style.border = `${borderWidth}px solid #ff0000`;
-                style.borderRightWidth = `${borderWidth}px`;
-                style.borderLeftWidth = `${borderWidth}px`;
-                style.borderTopWidth = `${borderWidth}px`;
-                style.borderBottomWidth = `${borderWidth}px`;
+                const opacity = Math.min(0.3 + (netAttackers * 0.2), 1);
+                if (winningColor === 'b') {
+                    squareStyle.boxShadow = `inset 0 0 0 ${Math.min(netAttackers * 2 + 2, 8)}px rgba(0, 100, 255, ${opacity})`;
+                } else if (winningColor === 'w') {
+                    squareStyle.boxShadow = `inset 0 0 0 ${Math.min(netAttackers * 2 + 2, 8)}px rgba(255, 0, 0, ${opacity})`;
+                }
             }
-        }
-        
-        // En prise logic (approximated with background)
-        const piece = game.get(square);
-        if (piece) {
-            const pieceColor = piece.charAt(0);
-            const opponentColor = pieceColor === 'w' ? 'b' : 'w';
-            const attackers = game.attackers(square, opponentColor).length;
-            const defenders = game.attackers(square, pieceColor).length;
-            if (attackers > 0 && attackers > defenders) {
-                style.backgroundColor = pieceColor === 'w' ? '#0000ff' : '#ff0000';
-                style.opacity = 0.3;
+            
+            // Add circle for en prise pieces
+            if (isEnPrise) {
+                const circleColor = pieceColor === 'w' ? 'rgba(0, 100, 255, 0.8)' : 'rgba(255, 0, 0, 0.8)';
+                squareStyle.background = `radial-gradient(circle, transparent 65%, ${circleColor} 70%, ${circleColor} 85%, transparent 90%)`;
             }
-        }
+            
+            if (Object.keys(squareStyle).length > 0) {
+                styles[square] = squareStyle;
+            }
+        });
         
-        return style;
+        return styles;
+    }, [showSquareControl, fen]);
+
+    const customArrows = useMemo(() => {
+        if (!showHoverControl || !hoveredSquare) return [];
+        
+        const arrows = [];
+        const blackAttackers = gameRef.current?.attackers(hoveredSquare, 'b') || [];
+        const whiteAttackers = gameRef.current?.attackers(hoveredSquare, 'w') || [];
+        
+        blackAttackers.forEach(attacker => {
+            arrows.push([attacker, hoveredSquare, 'rgb(0, 100, 255)']);
+        });
+        
+        whiteAttackers.forEach(attacker => {
+            arrows.push([attacker, hoveredSquare, 'rgb(255, 0, 0)']);
+        });
+        
+        return arrows;
+    }, [hoveredSquare, showHoverControl, fen]);
+
+    const onSquareClick = (square) => {
+        if (!gameRef.current) return;
+
+        // If no piece is selected, select this square if it has a piece
+        if (!moveFrom) {
+            const piece = gameRef.current.get(square);
+            if (piece && piece.color === gameRef.current.turn()) {
+                setMoveFrom(square);
+                
+                // Show possible moves
+                const moves = gameRef.current.moves({ square, verbose: true });
+                const newSquares = {};
+                moves.forEach(move => {
+                    newSquares[move.to] = {
+                        background: gameRef.current.get(move.to) 
+                            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+                            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+                        borderRadius: '50%'
+                    };
+                });
+                setOptionSquares(newSquares);
+            }
+            return;
+        }
+
+        // If clicking on the same square, deselect
+        if (moveFrom === square) {
+            setMoveFrom(null);
+            setOptionSquares({});
+            return;
+        }
+
+        // Try to make the move
+        try {
+            const move = gameRef.current.move({
+                from: moveFrom,
+                to: square,
+                promotion: 'q' // Always promote to queen for simplicity
+            });
+
+            if (move) {
+                const newFen = gameRef.current.fen();
+                localStorage.setItem("lastPosition", newFen);
+                setLastPosition(newFen);
+                setFen(newFen);
+            }
+        } catch (error) {
+            // Invalid move, just deselect
+        }
+
+        setMoveFrom(null);
+        setOptionSquares({});
     };
 
-    const handleSquareClick = (square) => {
-        // Basic click handling - can be extended
-        console.log(`Square ${square} clicked`);
+    const onSquareRightClick = (square) => {
+        const color = 'rgba(255, 255, 0, 0.4)';
+        setRightClickedSquares({
+            ...rightClickedSquares,
+            [square]: rightClickedSquares[square] && rightClickedSquares[square].backgroundColor === color
+                ? undefined
+                : { backgroundColor: color }
+        });
     };
 
-    const handleMouseMove = (square) => {
-        setHoveredSquare(square);
+    const onMouseOverSquare = (square) => {
+        if (showHoverControl) {
+            setHoveredSquare(square);
+        }
+    };
+
+    const onMouseOutSquare = () => {
+        setHoveredSquare(null);
+    };
+
+    const handleFenSelectChange = (e) => {
+        const newFen = e.target.value;
+        setFen(newFen);
+        setMoveFrom(null);
+        setOptionSquares({});
+        setRightClickedSquares({});
     };
 
     const presetPositions = [
@@ -155,35 +213,46 @@ const App = () => {
         { value: "r1b2r1k/4qp1p/p2ppb1Q/4nP2/1p1NP3/2N5/PPP4P/2KR1BR1 w", label: "1965 Kholmov Bronstein" },
         { value: "5k2/pp4pp/3bpp2/1P6/8/P2KP3/5PPP/2B5 b", label: "1972 Fischer Spassky game 2" },
         { value: "4k3/8/8/2b5/3N4/8/8/4K3 w - - 0 1", label: "Test en pris" }
-      ];
-      const options = [
+    ];
+
+    const options = [
         ...presetPositions,
         ...(lastPosition
             ? [{ value: lastPosition, label: "Last position" }]
             : [])
-      ];
+    ];
+
     return (
         <div className="container">
             <div className="board board-large left-element">
                 <Chessboard
-                    id="board"
                     position={fen}
-                    onPieceDrop={handlePieceDrop}
-                    customBoardStyle={customBoardStyle}
-                    onSquareClick={handleSquareClick}
-                    onMouseMove={handleMouseMove}
-                    boardWidth={680}  // Match cm-chessboard size
-                    lightSquareStyle={{ backgroundColor: '#f0d9b5' }}
-                    darkSquareStyle={{ backgroundColor: '#b58863' }}
+                    onSquareClick={onSquareClick}
+                    onSquareRightClick={onSquareRightClick}
+                    onMouseOverSquare={onMouseOverSquare}
+                    onMouseOutSquare={onMouseOutSquare}
+                    customSquareStyles={{
+                        ...customSquareStyles,
+                        ...optionSquares,
+                        ...rightClickedSquares,
+                        ...(moveFrom && {
+                            [moveFrom]: {
+                                backgroundColor: 'rgba(255, 255, 0, 0.4)'
+                            }
+                        })
+                    }}
+                    customArrows={customArrows}
+                    boardWidth={680}
+                    animationDuration={300}
                 />
             </div>
             <div className="right-element">
                 <h1>chessboard with square control</h1>
                 <ul>
-                    <li>Blue frames/borders denote Black control</li>
-                    <li>Red frames/borders denote White control</li>
-                    <li>The higher the control, the thicker the border</li>
-                    <li>Pieces <i>en prise</i> have colored background</li>
+                    <li>Blue frames denote Black control</li>
+                    <li>Red frames denote White control</li>
+                    <li>The higher the control, the more opaque the frame will appear.</li>
+                    <li>Pieces <i>en prise</i> are circled.</li>
                 </ul>
                 <br /><br />
                 <h2>Square Control</h2>
@@ -211,7 +280,7 @@ const App = () => {
                                 <label htmlFor="ddFEN" title="Select FEN">Select FEN:</label>
                             </td>
                             <td>
-                                <select id="ddFEN" size="1" value={fen} onChange={e => setFen(e.target.value)}>
+                                <select id="ddFEN" size="1" value={fen} onChange={handleFenSelectChange}>
                                 {options.map(p => (
                                     <option key={p.label} value={p.value}>
                                     {p.label}
@@ -225,7 +294,7 @@ const App = () => {
                                 <label htmlFor="txtFEN" title="Select FEN:">Or enter manually:</label>
                             </td>
                             <td>
-                                <input id="txtFEN" type="text" name="FEN" value={fen} onChange={e => setFen(e.target.value)} size="40" />
+                                <input id="txtFEN" type="text" name="FEN" value={fen} onChange={handleFenSelectChange} size="40" />
                                 <button id="btnFEN" type="button" onClick={() => localStorage.setItem("FEN", fen)}>apply</button>
                             </td>
                         </tr>
@@ -236,7 +305,7 @@ const App = () => {
                 <hr />
                 Source <a href="https://github.com/pabrams/marked-chessboard">github</a>
                 <br />
-                Uses <a href="https://github.com/react-chessboard/react-chessboard">react-chessboard</a> and <a href="https://github.com/jhlywa/chess.js">chess.js</a>.
+                Uses <a href="https://github.com/Clariity/react-chessboard">react-chessboard</a> and <a href="https://github.com/jhlywa/chess.js">chess.js</a>.
             </div>
         </div>
     );
