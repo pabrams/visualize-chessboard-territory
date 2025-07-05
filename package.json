@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && tsc --noEmit",
     "docker:build": "./build_docker.sh chess",
     "test": "vitest",
     "docker:test": "docker run -t chess ./run_tests.sh",
@@ -34,6 +34,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.2",
     "jsdom": "^26.0.0",
     "typescript": "^5.8.3",
