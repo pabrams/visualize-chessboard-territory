@@ -4,20 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "npm run copy-assets && vite build",
+    "build": "vite build",
     "docker:build": "./build_docker.sh chess",
     "test": "vitest",
     "docker:test": "docker run -t chess ./run_tests.sh",
-    "dev": "npm run copy-assets && vite",
+    "dev": "vite",
     "docker:dev": "docker run -it -p 5173:5173 --entrypoint sh chess ./run_dev.sh",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "copy-assets": "cp -r node_modules/cm-chessboard/assets public/cm-chessboard-assets"
+    "preview": "vite preview"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
-    "react-chessboard": "latest",
     "react": "^19.1.0",
+    "react-chessboard": "latest",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
@@ -25,8 +24,10 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@types/chess.js": "^0.13.7",
+    "@types/node": "^24.0.10",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
@@ -35,6 +36,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest-environment-jsdom": "^30.0.2",
     "jsdom": "^26.0.0",
+    "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.1.1"
   }
