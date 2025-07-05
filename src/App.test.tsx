@@ -3,14 +3,12 @@ import { vi } from 'vitest';
 import App from './App';
 import '@testing-library/jest-dom';
 
-// Create mocks for chess.js methods your component uses
 const moveMock = vi.fn();
 const movesMock = vi.fn();
 const fenMock = vi.fn(() => 'startpos');
 const isGameOverMock = vi.fn(() => false);
 const getMock = vi.fn();
 
-// Mock the entire chess.js module
 vi.mock('chess.js', () => {
   return {
     Chess: vi.fn().mockImplementation(() => {
@@ -63,9 +61,9 @@ describe('App', () => {
 
     // simulate first click on e2 (set moveFrom)
     fireEvent.click(board, { target: { square: 'e2', piece: 'wP' } });
+    
     // simulate second click on e4 (make move)
     fireEvent.click(board, { target: { square: 'e4' } });
-
     expect(moveMock).toHaveBeenCalledWith({ from: 'e2', to: 'e4', promotion: 'q' });
   });
 
