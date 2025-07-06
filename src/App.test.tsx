@@ -62,7 +62,6 @@ describe('App', () => {
 
   it('updates chess position when valid move is made', () => {
     render(<App />);
-    
     const chessboard = screen.getByTestId('chessboard');
     const initialPosition = chessboard.getAttribute('data-position');
     fireEvent.click(chessboard);

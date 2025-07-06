@@ -9,7 +9,9 @@ export default defineConfig({
     port: 5173,
   },
   test: {
-    reporters: ['basic'],
+    reporters: [
+      ['default', { summary: false }]
+    ],
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
@@ -19,13 +21,9 @@ export default defineConfig({
       }
     },
     // Mock CSS and static assets
-    transformMode: {
-      web: [/\.[jt]sx?$/, /\.css$/],
-      ssr: [/\.[jt]sx?$/]
-    },
-    deps: {
-      external: ['react-chessboard/dist/chessboard.css'],
-      inline: ['react-chessboard']
+    testTransformMode: {
+      web: ['**/*.tsx', '**/*.ts', '**/*.jsx', '**/*.js', '**/*.css'],
+      ssr: ['**/*.tsx', '**/*.ts', '**/*.jsx', '**/*.js']
     },
     mockReset: true,
     clearMocks: true,
