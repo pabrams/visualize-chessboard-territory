@@ -27,7 +27,6 @@ const App = () => {
         to: targetSquare,
         promotion: 'q'
       });
-      console.log(`Moved ${move}`, move);
       setChessPosition(chessGame.fen());
       setSourceSquare(sourceSquare);
       setTargetSquare(targetSquare || 'None');

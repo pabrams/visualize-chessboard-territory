@@ -67,8 +67,27 @@ describe('App', () => {
     const initialPosition = chessboard.getAttribute('data-position');
     fireEvent.click(chessboard);
     const newPosition = chessboard.getAttribute('data-position');
-    console.log("newPosition", newPosition);
-    console.log("initialPosition", initialPosition);
     expect(newPosition).not.toBe(initialPosition);
+  });
+
+  it('toggles background color when button is clicked', () => {
+    render(<App />);
+    
+    // Check initial state - should be light mode (white background)
+    const container = screen.getByTestId('chessboard').parentElement;
+    expect(container).toHaveStyle('background-color: rgb(255, 255, 255)');
+    
+    // Find and click the toggle button
+    const toggleButton = screen.getByText('Switch to Dark Mode');
+    fireEvent.click(toggleButton);
+    
+    // Check that background changed to dark mode
+    expect(container).toHaveStyle('background-color: rgb(0, 0, 0)');
+    expect(toggleButton).toHaveTextContent('Switch to Light Mode');
+    
+    // Click again to switch back to light mode
+    fireEvent.click(toggleButton);
+    expect(container).toHaveStyle('background-color: rgb(255, 255, 255)');
+    expect(toggleButton).toHaveTextContent('Switch to Dark Mode');
   });
 });
