@@ -43,7 +43,7 @@ describe('App', () => {
   it('updates state when piece is dropped via onPieceDrop', () => {
     render(<App />);
     
-    // Initial state check - use a more robust way to find the text
+    // Initial state check
     expect(screen.getByText(/Source square: None/)).toBeInTheDocument();
     expect(screen.getByText(/Target square: None/)).toBeInTheDocument();
     expect(screen.getByText(/Dropped piece: None/)).toBeInTheDocument();
