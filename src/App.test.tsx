@@ -4,8 +4,6 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 import App from './App';
 
-
-
 vi.mock('react-chessboard', () => ({
   Chessboard: ({ options = {} }: any) => {
     const { position } = options;
@@ -88,5 +86,67 @@ describe('App', () => {
     fireEvent.click(toggleButton);
     expect(container).toHaveStyle('background-color: rgb(255, 255, 255)');
     expect(toggleButton).toHaveTextContent('Switch to Dark Mode');
+  });
+
+  it('saves dark mode preference to localStorage when toggled', () => {
+    // Mock localStorage
+    const localStorageMock = {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      clear: vi.fn(),
+      removeItem: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    };
+    
+    // Replace global localStorage with our mock
+    vi.stubGlobal('localStorage', localStorageMock);
+    
+    render(<App />);
+    
+    // Mock that no dark mode preference exists in localStorage
+    localStorageMock.getItem.mockReturnValue(null);
+    
+    // Find and click the toggle button
+    const toggleButton = screen.getByText('Switch to Dark Mode');
+    fireEvent.click(toggleButton);
+    
+    // Check that localStorage.setItem was called with the correct values
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('darkMode', 'true');
+    
+    // Click again to switch back to light mode
+    fireEvent.click(toggleButton);
+    
+    // Check that localStorage.setItem was called again with false
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('darkMode', 'false');
+    
+    // Restore global localStorage
+    vi.restoreAllMocks();
+  });
+
+  it('loads dark mode preference from localStorage on initial render', () => {
+    // Mock localStorage with dark mode enabled
+    const localStorageMock = {
+      getItem: vi.fn().mockReturnValue('true'),
+      setItem: vi.fn(),
+      clear: vi.fn(),
+      removeItem: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    };
+    
+    vi.stubGlobal('localStorage', localStorageMock);
+    
+    render(<App />);
+    
+    // Check that the app starts in dark mode (black background)
+    const container = screen.getByTestId('chessboard').parentElement;
+    expect(container).toHaveStyle('background-color: rgb(0, 0, 0)');
+    
+    // The button should show "Switch to Light Mode" since we're in dark mode
+    expect(screen.getByText('Switch to Light Mode')).toBeInTheDocument();
+    
+    // Restore global localStorage
+    vi.restoreAllMocks();
   });
 });
