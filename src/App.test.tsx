@@ -1,165 +1,120 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi, beforeEach, describe, it, expect } from 'vitest';
+import { vi } from 'vitest';
 import '@testing-library/jest-dom';
-
-const moveMock = vi.fn();
-const movesMock = vi.fn();
-const fenMock = vi.fn(() => 'startpos');
-const isGameOverMock = vi.fn(() => false);
-const getMock = vi.fn();
-
-// Mock chess.js BEFORE importing App
-vi.mock('chess.js', () => {
-  return {
-    Chess: class MockChess {
-      constructor() {
-        return {
-          move: moveMock,
-          moves: movesMock,
-          fen: fenMock,
-          isGameOver: isGameOverMock,
-          get: getMock,
-        };
-      }
-    }
-  };
-});
-
-// Mock the react-chessboard component
-vi.mock('react-chessboard', () => {
-  return {
-    Chessboard: vi.fn(({ 
-      onSquareClick, 
-      position, 
-      // Filter out non-DOM props
-      arrowOptions,
-      boardStyle,
-      darkSquareStyle,
-      lightSquareStyle,
-      allowDragging,
-      showNotation,
-      squareStyles,
-      id,
-      ...domProps // Only spread DOM-safe props
-    }) => {
-      return (
-        <div 
-          data-testid="chessboard" 
-          data-position={position}
-          id={id}
-          onClick={(e) => {
-            // Simulate square click behavior
-            const target = e.target as HTMLElement;
-            const square = target.getAttribute('data-square');
-            const piece = target.getAttribute('data-piece');
-            if (onSquareClick && square) {
-              onSquareClick({ square, piece });
-            }
-          }}
-          {...domProps}
-        >
-          <div data-square="e2" data-piece="wP">e2</div>
-          <div data-square="e4" data-piece="">e4</div>
-          <div data-square="e5" data-piece="">e5</div>
-        </div>
-      );
-    }),
-  };
-});
-
-// Import App AFTER mocks are set up
 import App from './App';
 
-describe('App', () => {
-  beforeEach(() => {
-    moveMock.mockReset();
-    movesMock.mockReset();
-    fenMock.mockReturnValue('startpos');
-    isGameOverMock.mockReturnValue(false);
-    getMock.mockReset();
-  });
+vi.mock('react-chessboard', () => ({
+  Chessboard: ({ options = {} }: any) => {
+    const { position } = options;
 
+    return (
+      <div
+        data-testid="chessboard"
+        data-position={position ?? ''}
+        onClick={() => {
+          if (options.onPieceDrop) {
+            options.onPieceDrop({
+              sourceSquare: 'e2',
+              targetSquare: 'e4',
+              piece: { pieceType: 'pawn', isSparePiece: false },
+            });
+          }
+        }}
+      >
+        <div>e2</div>
+        <div>e4</div>
+      </div>
+    );
+  },
+}));
+
+describe('App', () => {
   it('renders chessboard with initial position', () => {
     render(<App />);
+    
     const chessboard = screen.getByTestId('chessboard');
     expect(chessboard).toBeInTheDocument();
-    expect(chessboard).toHaveAttribute('data-position', 'startpos');
+    expect(chessboard).toHaveAttribute('data-position', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
   });
 
-  it('calls getMoveOptions and sets moveFrom when piece is clicked', () => {
-    movesMock.mockReturnValue([{ from: 'e2', to: 'e4', san: 'e4' }]);
-    getMock.mockImplementation((square) => ({ color: square === 'e2' ? 'w' : 'b' }));
-
+  it('updates state when piece is dropped via onPieceDrop', () => {
     render(<App />);
-
-    const e2Square = screen.getByText('e2');
-    fireEvent.click(e2Square);
-
-    expect(movesMock).toHaveBeenCalledWith({ square: 'e2', verbose: true });
+    
+    // Initial state check - use a more robust way to find the text
+    expect(screen.getByText(/Source square: None/)).toBeInTheDocument();
+    expect(screen.getByText(/Target square: None/)).toBeInTheDocument();
+    expect(screen.getByText(/Dropped piece: None/)).toBeInTheDocument();
+    
+    const chessboard = screen.getByTestId('chessboard');
+    
+    // Simulate clicking the mocked chessboard (which triggers onPieceDrop)
+    fireEvent.click(chessboard);
+    
+    // Check that the UI shows the move information
+    expect(screen.getByText(/Source square: e2/)).toBeInTheDocument();
+    expect(screen.getByText(/Target square: e4/)).toBeInTheDocument();
+    expect(screen.getByText(/Dropped piece: pawn/)).toBeInTheDocument();
+    expect(screen.getByText(/Is spare piece: No/)).toBeInTheDocument();
   });
 
-  it('tries to make a move if moveFrom is set and destination square is valid', () => {
-    movesMock.mockReturnValue([{ from: 'e2', to: 'e4', san: 'e4' }]);
-    getMock.mockImplementation((square) => ({ color: square === 'e2' ? 'w' : 'b' }));
-    moveMock.mockReturnValue(true);
-
+  it('updates chess position when valid move is made', () => {
     render(<App />);
-
-    const e2Square = screen.getByText('e2');
-    const e4Square = screen.getByText('e4');
-
-    // First click on e2 (set moveFrom)
-    fireEvent.click(e2Square);
     
-    // Second click on e4 (make move)
-    fireEvent.click(e4Square);
+    const chessboard = screen.getByTestId('chessboard');
+    const initialPosition = chessboard.getAttribute('data-position');
     
-    expect(moveMock).toHaveBeenCalledWith({ from: 'e2', to: 'e4', promotion: 'q' });
+    // Simulate piece drop
+    fireEvent.click(chessboard);
+    
+    // Check that the position updated (should be different from initial)
+    const newPosition = chessboard.getAttribute('data-position');
+    expect(newPosition).not.toBe(initialPosition);
   });
 
   it('does not crash when invalid move is attempted', () => {
-    // First call returns moves for e2, second call returns empty array for e5
-    movesMock.mockReturnValueOnce([{ from: 'e2', to: 'e4', san: 'e4' }])
-           .mockReturnValueOnce([])
-           .mockReturnValue([]);
-    getMock.mockImplementation((square) => ({ color: square === 'e2' ? 'w' : 'b' }));
-    moveMock.mockReturnValue(null); // Invalid move returns null instead of throwing
+    // Mock the chessboard to simulate an invalid move
+    vi.doMock('react-chessboard', () => ({
+      Chessboard: ({ options, ...props }: any) => (
+        <div 
+          data-testid="chessboard" 
+          data-position={props['data-position']}
+          onClick={() => {
+            // Simulate an invalid move by calling onPieceDrop with invalid parameters
+            // This should cause chess.js to throw an error in the App component
+            if (options.onPieceDrop) {
+              // Call onPieceDrop with an invalid move (same source and target square)
+              // This should cause chess.js to throw an error
+              options.onPieceDrop({
+                sourceSquare: 'e2',
+                targetSquare: 'e2', // Invalid: same square - this should fail in chess.js
+                piece: { pieceType: 'pawn', isSparePiece: false }
+              });
+            }
+          }}
+        >
+          <div>e2</div>
+        </div>
+      )
+    }));
 
     render(<App />);
-
-    const e2Square = screen.getByText('e2');
-    const e5Square = screen.getByText('e5');
-
-    fireEvent.click(e2Square);
-    fireEvent.click(e5Square);
-
-    // Should not attempt invalid move since it's not in the valid moves
-    expect(moveMock).not.toHaveBeenCalled();
-  });
-
-  it('makes random move after player move', async () => {
-    // Setup for getMoveOptions call
-    movesMock.mockReturnValueOnce([{ from: 'e2', to: 'e4', san: 'e4' }])
-           // Setup for move validation
-           .mockReturnValueOnce([{ from: 'e2', to: 'e4', san: 'e4' }])
-           // Setup for random move - return valid moves array
-           .mockReturnValueOnce(['e7e5', 'e7e6']);
     
-    getMock.mockImplementation((square) => ({ color: square === 'e2' ? 'w' : 'b' }));
-    moveMock.mockReturnValue(true);
-
-    render(<App />);
-
-    const e2Square = screen.getByText('e2');
-    const e4Square = screen.getByText('e4');
-
-    fireEvent.click(e2Square);
-    fireEvent.click(e4Square);
-
-    // Wait for the random move timeout
-    await new Promise(resolve => setTimeout(resolve, 400));
-
-    // Should have called move twice - once for player, once for random move
-    expect(moveMock).toHaveBeenCalledTimes(2);
+    const chessboard = screen.getByTestId('chessboard');
+    
+    // This should not crash the app
+    expect(() => {
+      fireEvent.click(chessboard);
+    }).not.toThrow();
+    
+    // The state should remain as "None" since the move was invalid
+    // Let's check what text is actually in the DOM
+    const allText = screen.getAllByText(/.*/);
+    console.log('All text in DOM after invalid move attempt:', allText.map(element => element.textContent));
+    
+    // The state should remain as "None" since the move was invalid
+    // The chess.js library should throw an error for invalid moves, 
+    // and the App component should catch it and not update the state
+    expect(screen.getByText('Source square: None')).toBeInTheDocument();
   });
 });

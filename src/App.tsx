@@ -26,6 +26,7 @@ const App = () => {
         to: targetSquare,
         promotion: 'q'
       });
+      console.log(`Moved ${move}`, move);
       setChessPosition(chessGame.fen());
       setSourceSquare(sourceSquare);
       setTargetSquare(targetSquare || 'None');
@@ -40,8 +41,8 @@ const App = () => {
 
   const chessboardOptions = {
       onPieceDrop,
-      position: chessPosition,
       id: 'on-piece-drop',
+      position: chessPosition,
       arrowOptions: {
         color: 'yellow',
         secondaryColor: 'red',
@@ -85,7 +86,7 @@ const App = () => {
           Is spare piece: {isSparePiece ? 'Yes' : 'No'}
         </div>
 
-        <Chessboard options={chessboardOptions} />
+        <Chessboard options={chessboardOptions} data-testid="chessboard" />
 
         <p style={{
         fontSize: '0.8rem',
