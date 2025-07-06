@@ -1,4 +1,4 @@
-# Docker Dev Env for JS
+# Docker Dev Env for TS
 
 # Running tests
 
@@ -35,9 +35,9 @@ docker run -t my_app ./run_tests.sh
 
  RUN  v3.1.1 /app
 
- ✓ src/App.test.jsx (2 tests) 176ms
- ✓ test/basic.test.js (3 tests) 6ms
- ✓ test/suite.test.js (3 tests) 7ms
+ ✓ src/App.test.tsx (2 tests) 176ms
+ ✓ test/basic.test.ts (3 tests) 6ms
+ ✓ test/suite.test.ts (3 tests) 7ms
 
  Test Files  3 passed (3)
       Tests  8 passed (8)

@@ -1,10 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
@@ -19,8 +15,7 @@ export default defineConfig({
     setupFiles: './test/setupTests.js',
     css: {
       modules: {
-        classNameStrategy: 'non-scoped',
-        localsConvention: 'camelCase'
+        classNameStrategy: 'non-scoped'
       }
     },
     // Mock CSS and static assets
