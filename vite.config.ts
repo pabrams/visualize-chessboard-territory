@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
   },
   test: {
-    reporter: ['basic'],
+    reporters: ['basic'],
     globals: true,
     environment: 'jsdom',
     setupFiles: './test/setupTests.js',
