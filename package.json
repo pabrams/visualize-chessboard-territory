@@ -15,10 +15,16 @@
     "preinstall": "node -e \"if (!process.env.npm_execpath?.includes('pnpm')) { console.error('🚫 Use pnpm. Run: pnpm install'); process.exit(1) }\""
   },
   "dependencies": {
+    "@nestjs/cli": "^11.0.7",
+    "@nestjs/common": "^11.1.3",
+    "@nestjs/core": "^11.1.3",
+    "@nestjs/platform-express": "^11.1.3",
+    "chess.js": "^1.4.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
     "react-chessboard": "latest",
-    "chess.js": "^1.4.0"
+    "react-dom": "^19.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

@@ -10,6 +10,7 @@ const App = () => {
   const [targetSquare, setTargetSquare] = useState<string>('None');
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   const onPieceDrop = ({
     sourceSquare,
@@ -70,12 +71,35 @@ const App = () => {
       showNotation: false,
     };
 
+    const toggleBackground = () => {
+      setIsDarkMode(!isDarkMode);
+    };
+
     return <div style={{
       display: 'flex',
       flexDirection: 'column',
       gap: '1rem',
-      alignItems: 'center'
+      alignItems: 'center',
+      backgroundColor: isDarkMode ? '#000' : '#fff',
+      color: isDarkMode ? '#fff' : '#000',
+      minHeight: '100vh',
+      padding: '1rem'
     }}>
+        <button
+          onClick={toggleBackground}
+          style={{
+            padding: '0.5rem 1rem',
+            marginBottom: '1rem',
+            backgroundColor: isDarkMode ? '#333' : '#ddd',
+            color: isDarkMode ? '#fff' : '#000',
+            border: '1px solid #666',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        </button>
+
         <div>
           Source square: {sourceSquare}
           <br />
@@ -90,7 +114,7 @@ const App = () => {
 
         <p style={{
         fontSize: '0.8rem',
-        color: '#666'
+        color: isDarkMode ? '#ccc' : '#666'
       }}>
           Drag and drop pieces to see the drop events
         </p>
