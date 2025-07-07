@@ -1,10 +1,14 @@
 *
+!eslint.config.ts
 !eslint.config.js
 !index.html
 !package-lock.json
 !package.json
 !public
 !run_tests.sh
+!run_dev.sh
 !src
 !test
+!vite.config.ts
 !vite.config.js
+!pnpm-lock.yaml
