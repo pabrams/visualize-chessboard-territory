@@ -9,6 +9,7 @@ export default defineConfig({
     port: 5173,
   },
   test: {
+    include: ['test/**/*.{test,spec}.{ts,tsx}'],
     reporters: [
       ['default', { summary: false }]
     ],

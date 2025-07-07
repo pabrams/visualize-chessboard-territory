@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
-import App from './App';
+import App from '../src/App';
 vi.mock('react-chessboard', () => ({
   Chessboard: ({ options = {} }: any) => {
     const { position } = options;
