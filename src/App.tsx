@@ -26,7 +26,6 @@ const App = () => {
         to: targetSquare,
         promotion: 'q'
       });
-      console.log(`Moved ${move}`, move);
       setChessPosition(chessGame.fen());
       setSourceSquare(sourceSquare);
       setTargetSquare(targetSquare || 'None');
@@ -70,7 +69,8 @@ const App = () => {
       showNotation: false,
     };
 
-    return <div style={{
+    return <div 
+        data-testid="app-container" style={{
       display: 'flex',
       flexDirection: 'column',
       gap: '1rem',
