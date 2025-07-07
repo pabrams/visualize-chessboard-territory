@@ -10,6 +10,7 @@ const App = () => {
   const [targetSquare, setTargetSquare] = useState<string>('None');
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     // Initialize theme from localStorage immediately
@@ -57,6 +58,13 @@ const App = () => {
       setTargetSquare(targetSquare || 'None');
       setDroppedPiece(piece.pieceType);
       setIsSparePiece(piece.isSparePiece);
+      
+      // Add move to history in algebraic notation
+      if (move) {
+        const moveNotation = move.san; // Standard Algebraic Notation
+        setMoveHistory(prev => [...prev, moveNotation]);
+      }
+      
       return true; 
     } catch (e) {
       console.error(e);
@@ -114,6 +122,45 @@ const App = () => {
         </div>
 
         <Chessboard options={chessboardOptions} data-testid="chessboard" />
+
+        <div data-testid="movehistory" style={{
+          backgroundColor: theme === 'dark' ? '#333' : '#f0f0f0',
+          padding: '1rem',
+          borderRadius: '4px',
+          margin: '1rem 0',
+          maxHeight: '200px',
+          overflowY: 'auto',
+          width: '100%',
+          maxWidth: '400px'
+        }}>
+          <h3 style={{
+            margin: '0 0 0.5rem 0',
+            color: theme === 'dark' ? '#fff' : '#000',
+            fontSize: '1rem'
+          }}>Move History</h3>
+          {moveHistory.length === 0 ? (
+            <p style={{
+              color: theme === 'dark' ? '#ccc' : '#666',
+              fontStyle: 'italic'
+            }}>No moves yet. Make a move to see the history.</p>
+          ) : (
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0
+            }}>
+              {moveHistory.map((move, index) => (
+                <li key={index} style={{
+                  padding: '0.25rem 0',
+                  borderBottom: '1px solid ' + (theme === 'dark' ? '#444' : '#ddd'),
+                  color: theme === 'dark' ? '#fff' : '#000'
+                }}>
+                  {index + 1}. {move}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <p style={{
         fontSize: '0.8rem',
