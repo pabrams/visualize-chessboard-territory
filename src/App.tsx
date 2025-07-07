@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
@@ -10,6 +11,23 @@ const App = () => {
   const [targetSquare, setTargetSquare] = useState<string>('None');
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
+
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
 
   const onPieceDrop = ({
     sourceSquare,
@@ -69,13 +87,14 @@ const App = () => {
       showNotation: false,
     };
 
-    return <div 
-        data-testid="app-container" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1rem',
-      alignItems: 'center'
-    }}>
+     return <div 
+          data-testid="app-container" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        alignItems: 'center',
+        backgroundColor: theme === 'dark' ? '#000' : '#fff'
+      }}>
         <div>
           Source square: {sourceSquare}
           <br />
@@ -94,6 +113,9 @@ const App = () => {
       }}>
           Drag and drop pieces to see the drop events
         </p>
+      <button onClick={toggleTheme}>
+        {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      </button>
       </div>;
 };
 
