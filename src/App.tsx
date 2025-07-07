@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
@@ -10,32 +10,6 @@ const App = () => {
   const [targetSquare, setTargetSquare] = useState<string>('None');
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
-
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    // Initialize theme from localStorage immediately
-    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    return savedTheme || 'dark'; // Default to 'dark' to match your tests
-  });
-
-  // Save theme to localStorage when it changes, but handle initial render correctly
-  const isInitialRender = useRef(true);
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      // Only save to localStorage on initial render if no theme was previously saved
-      const savedTheme = localStorage.getItem('theme');
-      if (!savedTheme) {
-        localStorage.setItem('theme', theme);
-      }
-      return;
-    }
-    // For subsequent renders, always save the theme
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   const onPieceDrop = ({
     sourceSquare,
@@ -95,14 +69,13 @@ const App = () => {
       showNotation: false,
     };
 
-     return <div 
-          data-testid="app-container" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        alignItems: 'center',
-        backgroundColor: theme === 'dark' ? '#000' : '#fff'
-      }}>
+    return <div 
+        data-testid="app-container" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+      alignItems: 'center'
+    }}>
         <div>
           Source square: {sourceSquare}
           <br />
@@ -121,9 +94,6 @@ const App = () => {
       }}>
           Drag and drop pieces to see the drop events
         </p>
-      <button onClick={toggleTheme}>
-        {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      </button>
       </div>;
 };
 
