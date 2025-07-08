@@ -7,7 +7,7 @@ const App = () => {
   const chessGame = chessGameRef.current;
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
-  const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);  // New state
+  const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);
   const [fenInput, setFenInput] = useState('');
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
@@ -48,6 +48,7 @@ const App = () => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
+
   // Save theme to localStorage when it changes, but handle initial render correctly
   const isInitialRender = useRef(true);
   useEffect(() => {
@@ -62,6 +63,16 @@ const App = () => {
     }
     // For subsequent renders, always save the theme
     localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  // Apply theme to body element
+  useEffect(() => {
+    document.body.style.backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
+    document.body.style.color = theme === 'dark' ? '#ffffff' : '#000000';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+    document.body.style.transition = 'background-color 0.2s ease';
   }, [theme]);
 
   const toggleTheme = () => {
@@ -95,7 +106,6 @@ const App = () => {
     }
   };
 
-
   const chessboardOptions = {
       onPieceDrop,
       onSquareRightClick,
@@ -116,28 +126,42 @@ const App = () => {
       boardStyle: {
         width: '50vmin',
         height: '50vmin',
+        boxShadow: theme === 'dark' 
+          ? '0 8px 32px rgba(0, 0, 0, 0.8)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.15)',
+        borderRadius: '8px',
+        overflow: 'hidden',
       },
       darkSquareStyle: {
-        backgroundColor: '#777',
-        border: '1px solid #000',
+        backgroundColor: theme === 'dark' ? '#444444' : '#777777',
+        border: 'none',
       },
       lightSquareStyle: {
-        backgroundColor: '#EEE',
-        border: '1px solid #000',
+        backgroundColor: theme === 'dark' ? '#dddddd' : '#ffffff',
+        border: 'none',
       },
       allowDragging: true,
       showNotation: false,
     };
-return <div 
-    data-testid="app-container" 
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1rem',
-      alignItems: 'center',
-      backgroundColor: theme === 'dark' ? '#000' : '#fff',
-      position: 'relative'  // Added for absolute positioning
-    }}>
+
+  return (
+    <div 
+      data-testid="app-container" 
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '2rem',
+        padding: '2rem',
+        backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
+        color: theme === 'dark' ? '#ffffff' : '#000000',
+        transition: 'all 0.2s ease',
+        position: 'relative',
+        boxSizing: 'border-box'
+      }}
+    >
       <div data-testid="arrows-list" style={{ display: 'none' }}>
         {arrows.map(({ startSquare, endSquare, color }, i) => (
           <div key={i}>
@@ -145,113 +169,210 @@ return <div
           </div>
         ))}
       </div>
-      <Chessboard 
-        options={chessboardOptions} 
-        data-testid="chessboard" 
-      />
 
-      {/* New FEN input and apply button */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <input
-          type="text"
-          value={fenInput}
-          onChange={(e) => setFenInput(e.target.value)}
-          placeholder="Enter FEN"
-          data-testid="FEN"
-          style={{
-            padding: '8px',
-            border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
-            borderRadius: '4px',
-            backgroundColor: theme === 'dark' ? '#222' : '#f9f9f9',
-            color: theme === 'dark' ? '#fff' : '#000',
-          }}
-        />
-        <button
-          data-testid="applyFen"
-          onClick={() => {
-            try {
-              chessGame.load(fenInput);
-              setChessPosition(chessGame.fen());
-              setMoveHistory(chessGame.history());
-              setArrows([]);
-              setLastClickedSquare(null);
-            } catch (e) {
-              console.error(e);
-            }
-          }}
-          style={{
-            padding: '8px 16px',
-            border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
-            borderRadius: '4px',
-            backgroundColor: theme === 'dark' ? '#333' : '#ddd',
-            color: theme === 'dark' ? '#fff' : '#000',
-            cursor: 'pointer',
-          }}
-        >
-          Apply
-        </button>
-      </div>
-
-      <div 
-        data-testid="movehistory"
+      {/* Theme toggle button */}
+      <button
+        onClick={toggleTheme}
+        data-testid="toggleTheme"
+        title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         style={{
-          width: '300px',
-          height: '150px',
-          border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
-          borderRadius: '4px',
-          padding: '8px',
-          backgroundColor: theme === 'dark' ? '#222' : '#f9f9f9',
-          color: theme === 'dark' ? '#fff' : '#000',
-          overflowY: 'auto',
-          fontSize: '14px',
-          fontFamily: 'monospace'
+          position: 'absolute',
+          top: '1.5rem',
+          right: '1.5rem',
+          background: theme === 'dark' ? '#222222' : '#ffffff',
+          border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+          borderRadius: '8px',
+          padding: '12px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          color: theme === 'dark' ? '#ffffff' : '#000000',
+          transition: 'all 0.2s ease',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
+            : '0 6px 16px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)';
         }}
       >
-          <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Move History:</div>
+        {theme === 'dark' ? (
+          // Sun icon
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5" fill="currentColor" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        ) : (
+          // Moon icon
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Main content container */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '2rem',
+        width: '100%',
+        maxWidth: '800px',
+      }}>
+        <Chessboard 
+          options={chessboardOptions} 
+          data-testid="chessboard" 
+        />
+
+        {/* FEN input container */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '500px',
+          padding: '1rem',
+          backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+          borderRadius: '12px',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+          border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+        }}>
+          <input
+            type="text"
+            value={fenInput}
+            onChange={(e) => setFenInput(e.target.value)}
+            placeholder="Enter FEN position..."
+            data-testid="FEN"
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              border: `1px solid ${theme === 'dark' ? '#444' : '#ccc'}`,
+              borderRadius: '8px',
+              backgroundColor: theme === 'dark' ? '#2d2d2d' : '#f9f9f9',
+              color: theme === 'dark' ? '#ffffff' : '#000000',
+              fontSize: '14px',
+              fontFamily: 'monospace',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = theme === 'dark' ? '#6b5b95' : '#8b4513';
+              e.currentTarget.style.boxShadow = `0 0 0 2px ${theme === 'dark' ? 'rgba(107, 91, 149, 0.2)' : 'rgba(139, 69, 19, 0.2)'}`;
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = theme === 'dark' ? '#444' : '#ccc';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          />
+          <button
+            data-testid="applyFen"
+            onClick={() => {
+              try {
+                chessGame.load(fenInput);
+                setChessPosition(chessGame.fen());
+                setMoveHistory(chessGame.history());
+                setArrows([]);
+                setLastClickedSquare(null);
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              borderRadius: '8px',
+              backgroundColor: theme === 'dark' ? '#333333' : '#888888',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme === 'dark' ? '#333333' : '#777777';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = theme === 'dark' ? '#666666' : '#999999';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            Apply
+          </button>
+        </div>
+
+        {/* Move history */}
+        <div 
+          data-testid="movehistory"
+          style={{
+            width: '100%',
+            maxWidth: '500px',
+            height: '200px',
+            border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+            borderRadius: '12px',
+            padding: '1.5rem',
+            backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+            color: theme === 'dark' ? '#ffffff' : '#000000',
+            overflowY: 'auto',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            boxShadow: theme === 'dark' 
+              ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+              : '0 4px 12px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div style={{ 
+            fontWeight: '600', 
+            marginBottom: '12px',
+            fontSize: '16px',
+            color: theme === 'dark' ? '#e0e0e0' : '#333333'
+          }}>
+            Move History
+          </div>
           {moveHistory.length === 0 ? (
-            <div style={{ color: theme === 'dark' ? '#888' : '#666', fontStyle: 'italic' }}>
+            <div style={{ 
+              color: theme === 'dark' ? '#666' : '#999', 
+              fontStyle: 'italic',
+              fontSize: '13px'
+            }}>
               No moves yet
             </div>
           ) : (
             <div>
               {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
-                <div key={i} style={{ marginBottom: '2px' }}>
-                  {i + 1}. {moveHistory[i * 2] ?? ''} {moveHistory[i * 2 + 1] ?? ''}
+                <div key={i} style={{ 
+                  marginBottom: '4px',
+                  padding: '2px 0',
+                  lineHeight: '1.4'
+                }}>
+                  <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                    {i + 1}.
+                  </span>{' '}
+                  <span style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>
+                    {moveHistory[i * 2] ?? ''}
+                  </span>{' '}
+                  <span style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>
+                    {moveHistory[i * 2 + 1] ?? ''}
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
-       <button
-          onClick={toggleTheme}
-          data-testid="toggleTheme"
-          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            zIndex: 1000,
-            color: theme === 'dark' ? '#fff' : '#000'
-          }}
-        >
-      {theme === 'dark' ? (
-        // Sun icon
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="5" fill="currentColor" />
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      ) : (
-        // Moon icon
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-
-      )}
-    </button>
-      </div>;
+      </div>
+    </div>
+  );
 };
 
 export default App;
