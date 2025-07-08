@@ -1,17 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
+import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
 const App = () => {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
-  const [sourceSquare, setSourceSquare] = useState<string>('None');
-  const [targetSquare, setTargetSquare] = useState<string>('None');
-  const [droppedPiece, setDroppedPiece] = useState<string>('None');
-  const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
+  const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
+    const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
+
+    const whiteAttackers = chessGame.attackers(square as Square, 'w');
+    whiteAttackers.forEach((attackerSquare) => {
+      newArrows.push({
+        startSquare: attackerSquare,
+        endSquare: square,
+        color: 'red',  // White attackers red
+      });
+    });
+    
+    const blackAttackers = chessGame.attackers(square as Square, 'b');
+    blackAttackers.forEach((attackerSquare) => {
+      newArrows.push({
+        startSquare: attackerSquare,
+        endSquare: square,
+        color: 'blue',  // Black attackers blue
+      });
+    });
+
+    setArrows(newArrows);
+  };
+
+  const [arrows, setArrows] = useState<
+    { startSquare: string; endSquare: string, color: string }[]
+  >([]);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
@@ -53,10 +76,6 @@ const App = () => {
         promotion: 'q'
       });
       setChessPosition(chessGame.fen());
-      setSourceSquare(sourceSquare);
-      setTargetSquare(targetSquare || 'None');
-      setDroppedPiece(piece.pieceType);
-      setIsSparePiece(piece.isSparePiece);
       setMoveHistory(chessGame.history());
       return true; 
     } catch (e) {
@@ -67,7 +86,9 @@ const App = () => {
 
   const chessboardOptions = {
       onPieceDrop,
-      id: 'on-piece-drop',
+      onSquareRightClick,
+      arrows,
+      id: 'chessboard-options',
       position: chessPosition,
       arrowOptions: {
         color: 'yellow',
@@ -103,7 +124,17 @@ const App = () => {
         alignItems: 'center',
         backgroundColor: theme === 'dark' ? '#000' : '#fff'
       }}>
-        <Chessboard options={chessboardOptions} data-testid="chessboard" />
+        <div data-testid="arrows-list" style={{ display: 'none' }}>
+          {arrows.map(({ startSquare, endSquare, color }, i) => (
+            <div key={i}>
+              start: {startSquare}, end: {endSquare}, color: {color}
+            </div>
+          ))}
+        </div>
+        <Chessboard 
+          options={chessboardOptions} 
+          data-testid="chessboard" 
+        />
 
         <div 
           data-testid="movehistory"
