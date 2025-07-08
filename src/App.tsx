@@ -18,22 +18,31 @@ const App = () => {
     setRightClickedSquare(square);
     setRightClickedPiece(piece?.pieceType || null);
 
-    // Example: draw arrows from clicked square to next 2 squares on the rank
-    const file = square[0];
-    const rank = parseInt(square[1]);
-    
-    const nextSquares = [];
-    if (rank < 8) nextSquares.push(file + (rank + 1));
-    if (rank < 7) nextSquares.push(file + (rank + 2));
+    const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
 
-    const newArrows = nextSquares.map(targetSquare => ({
-      startSquare: square,
-      endSquare: targetSquare,
-      color: 'red',
-    }));
+    // Get white attackers
+    const whiteAttackers = chessGame.attackers(square as Square, 'w');
+    whiteAttackers.forEach((attackerSquare) => {
+      newArrows.push({
+        startSquare: attackerSquare,
+        endSquare: square,
+        color: 'red',  // White attackers red
+      });
+    });
+
+    // Get black attackers
+    const blackAttackers = chessGame.attackers(square as Square, 'b');
+    blackAttackers.forEach((attackerSquare) => {
+      newArrows.push({
+        startSquare: attackerSquare,
+        endSquare: square,
+        color: 'blue',  // Black attackers blue
+      });
+    });
 
     setArrows(newArrows);
   };
+
 
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
