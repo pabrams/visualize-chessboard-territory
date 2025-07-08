@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
+import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
 const App = () => {
@@ -12,6 +12,32 @@ const App = () => {
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
+  const [rightClickedSquare, setRightClickedSquare] = useState<string | null>(null);
+  const [rightClickedPiece, setRightClickedPiece] = useState<string | null>(null);
+  const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
+    setRightClickedSquare(square);
+    setRightClickedPiece(piece?.pieceType || null);
+
+    // Example: draw arrows from clicked square to next 2 squares on the rank
+    const file = square[0];
+    const rank = parseInt(square[1]);
+    
+    const nextSquares = [];
+    if (rank < 8) nextSquares.push(file + (rank + 1));
+    if (rank < 7) nextSquares.push(file + (rank + 2));
+
+    const newArrows = nextSquares.map(targetSquare => ({
+      startSquare: square,
+      endSquare: targetSquare,
+      color: 'red',
+    }));
+
+    setArrows(newArrows);
+  };
+
+  const [arrows, setArrows] = useState<
+    { startSquare: string; endSquare: string, color: string }[]
+  >([]);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
@@ -67,7 +93,9 @@ const App = () => {
 
   const chessboardOptions = {
       onPieceDrop,
-      id: 'on-piece-drop',
+      onSquareRightClick,
+      arrows,
+      id: 'chessboard-options',
       position: chessPosition,
       arrowOptions: {
         color: 'yellow',
