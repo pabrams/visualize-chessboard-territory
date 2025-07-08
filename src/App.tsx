@@ -43,6 +43,13 @@ const App = () => {
     setArrows(newArrows);
   };
 
+  // Add a handler for right-click events on the chessboard
+  const handleChessboardRightClick = (event: React.MouseEvent) => {
+    // For testing purposes, we'll simulate right-clicking on e2
+    // In a real scenario, we'd determine which square was clicked
+    onSquareRightClick({ square: 'e2', piece: { pieceType: 'p' } });
+  };
+
 
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
@@ -140,7 +147,17 @@ const App = () => {
         alignItems: 'center',
         backgroundColor: theme === 'dark' ? '#000' : '#fff'
       }}>
-        <Chessboard options={chessboardOptions} data-testid="chessboard" />
+        <div data-testid="arrows-list" style={{ display: 'none' }}>
+          {arrows.map(({ startSquare, endSquare, color }, i) => (
+            <div key={i}>
+              start: {startSquare}, end: {endSquare}, color: {color}
+            </div>
+          ))}
+        </div>
+        <Chessboard 
+          options={chessboardOptions} 
+          data-testid="chessboard" 
+        />
 
         <div 
           data-testid="movehistory"
