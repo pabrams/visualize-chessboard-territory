@@ -104,16 +104,6 @@ const App = () => {
         alignItems: 'center',
         backgroundColor: theme === 'dark' ? '#000' : '#fff'
       }}>
-        <div>
-          Source square: {sourceSquare}
-          <br />
-          Target square: {targetSquare}
-          <br />
-          Dropped piece: {droppedPiece}
-          <br />
-          Is spare piece: {isSparePiece ? 'Yes' : 'No'}
-        </div>
-
         <Chessboard options={chessboardOptions} data-testid="chessboard" />
 
         <div 
@@ -146,12 +136,6 @@ const App = () => {
             </div>
           )}
         </div>
-        <p style={{
-        fontSize: '0.8rem',
-        color: '#666'
-      }}>
-          Drag and drop pieces to see the drop events
-        </p>
       <button onClick={toggleTheme}>
         {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       </button>
