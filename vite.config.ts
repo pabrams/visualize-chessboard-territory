@@ -7,6 +7,12 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+    watch: {
+      usePolling: true,
+    }
   },
   test: {
     include: ['test/**/*.{test,spec}.{ts,tsx}'],
