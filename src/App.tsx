@@ -7,29 +7,39 @@ const App = () => {
   const chessGame = chessGameRef.current;
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);  // New state
+
+
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
-    const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
+    if (square === lastClickedSquare && arrows.length > 0) {
+      // Clear arrows on second click of same square
+      setArrows([]);
+      setLastClickedSquare(null);
+    } else {
+      const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
 
-    const whiteAttackers = chessGame.attackers(square as Square, 'w');
-    whiteAttackers.forEach((attackerSquare) => {
-      newArrows.push({
-        startSquare: attackerSquare,
-        endSquare: square,
-        color: 'red',  // White attackers red
+      const whiteAttackers = chessGame.attackers(square as Square, 'w');
+      whiteAttackers.forEach((attackerSquare) => {
+        newArrows.push({
+          startSquare: attackerSquare,
+          endSquare: square,
+          color: 'red',  // White attackers red
+        });
       });
-    });
-    
-    const blackAttackers = chessGame.attackers(square as Square, 'b');
-    blackAttackers.forEach((attackerSquare) => {
-      newArrows.push({
-        startSquare: attackerSquare,
-        endSquare: square,
-        color: 'blue',  // Black attackers blue
+      
+      const blackAttackers = chessGame.attackers(square as Square, 'b');
+      blackAttackers.forEach((attackerSquare) => {
+        newArrows.push({
+          startSquare: attackerSquare,
+          endSquare: square,
+          color: 'blue',  // Black attackers blue
+        });
       });
-    });
 
-    setArrows(newArrows);
+      setArrows(newArrows);
+      setLastClickedSquare(square);
+    }
   };
 
   const [arrows, setArrows] = useState<
@@ -77,12 +87,16 @@ const App = () => {
       });
       setChessPosition(chessGame.fen());
       setMoveHistory(chessGame.history());
+      // Clear arrows and reset last clicked after move
+      setArrows([]);
+      setLastClickedSquare(null);
       return true; 
     } catch (e) {
       console.error(e);
       return false;
     }
   };
+
 
   const chessboardOptions = {
       onPieceDrop,
