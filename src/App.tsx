@@ -6,21 +6,11 @@ const App = () => {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
-  const [sourceSquare, setSourceSquare] = useState<string>('None');
-  const [targetSquare, setTargetSquare] = useState<string>('None');
-  const [droppedPiece, setDroppedPiece] = useState<string>('None');
-  const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
-  const [rightClickedSquare, setRightClickedSquare] = useState<string | null>(null);
-  const [rightClickedPiece, setRightClickedPiece] = useState<string | null>(null);
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
-    setRightClickedSquare(square);
-    setRightClickedPiece(piece?.pieceType || null);
-
     const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
 
-    // Get white attackers
     const whiteAttackers = chessGame.attackers(square as Square, 'w');
     whiteAttackers.forEach((attackerSquare) => {
       newArrows.push({
@@ -29,8 +19,7 @@ const App = () => {
         color: 'red',  // White attackers red
       });
     });
-
-    // Get black attackers
+    
     const blackAttackers = chessGame.attackers(square as Square, 'b');
     blackAttackers.forEach((attackerSquare) => {
       newArrows.push({
@@ -42,14 +31,6 @@ const App = () => {
 
     setArrows(newArrows);
   };
-
-  // Add a handler for right-click events on the chessboard
-  const handleChessboardRightClick = (event: React.MouseEvent) => {
-    // For testing purposes, we'll simulate right-clicking on e2
-    // In a real scenario, we'd determine which square was clicked
-    onSquareRightClick({ square: 'e2', piece: { pieceType: 'p' } });
-  };
-
 
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
@@ -95,10 +76,6 @@ const App = () => {
         promotion: 'q'
       });
       setChessPosition(chessGame.fen());
-      setSourceSquare(sourceSquare);
-      setTargetSquare(targetSquare || 'None');
-      setDroppedPiece(piece.pieceType);
-      setIsSparePiece(piece.isSparePiece);
       setMoveHistory(chessGame.history());
       return true; 
     } catch (e) {
