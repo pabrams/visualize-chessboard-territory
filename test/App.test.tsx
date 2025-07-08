@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 import App from '../src/App';
@@ -96,6 +96,40 @@ describe('App', () => {
     expect(moveHistoryElement).toHaveTextContent('1. e4');
   });
 
+  test('persists theme across reloads', async () => {
+    // Setup: Set initial theme to 'light'
+    localStorage.setItem('theme', 'light');
+
+    const { unmount } = render(<App />);
+    const container = screen.getByTestId('app-container');
+
+    // Wait for initial render with light theme (white background)
+    await waitFor(() => {
+      expect(getComputedStyle(container).backgroundColor).toBe('rgb(255, 255, 255)');
+    });
+
+    // Toggle to dark theme (black background)
+    fireEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(getComputedStyle(container).backgroundColor).toBe('rgb(0, 0, 0)');
+    });
+
+    // Unmount (simulate close)
+    unmount();
+
+    // Re-mount (simulate reload)
+    render(<App />);
+    const containerReloaded = screen.getByTestId('app-container');
+
+    // Now check if theme persisted as 'dark' (black background)
+    await waitFor(() => {
+      expect(getComputedStyle(containerReloaded).backgroundColor).toBe('rgb(0, 0, 0)');
+    });
+
+    // Fails if bug present (if theme resets to light, this expect will fail)
+  });
+
+
   it('displays correct history after 1.e4 d5', () => {
     render(<App />);
 
@@ -107,9 +141,6 @@ describe('App', () => {
     };
     const chessboard = screen.getByTestId('chessboard');
     fireEvent.click(chessboard);
-
-    // TODO: For d7-d5, you might need to simulate a second move
-    // You can do it by changing moveToSimulate before clicking again:
 
     moveToSimulate = {
       sourceSquare: 'd7',
@@ -141,5 +172,67 @@ describe('App', () => {
     fireEvent.click(toggleButton);
     const afterSecondClickBg = getComputedStyle(container).backgroundColor;
     expect(afterSecondClickBg).toBe(initialBg);
+  });
+  
+  it('respects localStorage theme preference and does not overwrite it on initial load', () => {
+    // Setup mock localStorage with 'light' theme initially saved
+    const localStorageMock = {
+      getItem: vi.fn().mockReturnValue('light'),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    };
+    vi.stubGlobal('localStorage', localStorageMock);
+
+    render(<App />);
+
+    const container = screen.getByTestId('app-container');
+
+    // The app SHOULD show white background when localStorage has 'light'
+    expect(getComputedStyle(container).backgroundColor).toBe('rgb(255, 255, 255)');
+
+    // The app should NOT call setItem during initial load (should only read)
+    expect(localStorageMock.setItem).not.toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+  
+  it('saves dark mode preference to localStorage when toggled', () => {
+    // Mock localStorage
+    const localStorageMock = {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      clear: vi.fn(),
+      removeItem: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    };
+    
+    // Replace global localStorage with our mock
+    vi.stubGlobal('localStorage', localStorageMock);
+    
+    render(<App />);
+    
+    // Mock that no dark mode preference exists in localStorage
+    localStorageMock.getItem.mockReturnValue(null);
+    
+    // Find and click the toggle button
+    // const toggleButton = screen.getByText(/Switch to Dark Mode/);
+    const btn = screen.getByRole('button', { name: /switch to/i }) 
+    fireEvent.click(btn);
+    
+    // Check that localStorage.setItem was called with the correct values
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark');
+    
+    // Click again to switch back to light mode
+    fireEvent.click(btn);
+    
+    // Check that localStorage.setItem was called again with false
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light');
+    
+    // Restore global localStorage
+    vi.restoreAllMocks();
   });
 });
