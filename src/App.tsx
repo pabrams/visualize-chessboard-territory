@@ -11,6 +11,7 @@ const App = () => {
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [arrows, setArrows] = useState<Array<{ from: string; to: string; color: string }>>([]);
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
@@ -37,6 +38,63 @@ const App = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
   
+  // Function to find all pieces attacking a given square
+  const findAttackingPieces = (targetSquare: Square) => {
+    const attackingArrows: Array<{ from: string; to: string; color: string }> = [];
+    
+    // Get all squares on the board
+    const squares = [
+      'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8',
+      'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7',
+      'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6',
+      'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5',
+      'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
+      'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3',
+      'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
+      'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1'
+    ] as Square[];
+
+    // Check each square for pieces that can attack the target
+    squares.forEach(square => {
+      const piece = chessGame.get(square);
+      if (piece) {
+        // Create a temporary game state to test if this piece can move to target
+        const tempGame = new Chess(chessGame.fen());
+        try {
+          const move = tempGame.move({
+            from: square,
+            to: targetSquare,
+            promotion: 'q' // Handle pawn promotion
+          });
+          
+          if (move) {
+            // This piece can attack the target square
+            const arrowColor = piece.color === 'w' ? 'red' : 'blue';
+            attackingArrows.push({
+              from: square,
+              to: targetSquare,
+              color: arrowColor
+            });
+          }
+        } catch (e) {
+          // Move is not legal, piece cannot attack this square
+        }
+      }
+    });
+
+    return attackingArrows;
+  };
+
+  // Handle right-click on squares
+  const onSquareRightClick = (square: Square) => {
+    const attackingArrows = findAttackingPieces(square);
+    setArrows(attackingArrows);
+  };
+
+  // Clear arrows on left click
+  const onSquareClick = () => {
+    setArrows([]);
+  };
   const onPieceDrop = ({
     sourceSquare,
     targetSquare,
@@ -67,8 +125,11 @@ const App = () => {
 
   const chessboardOptions = {
       onPieceDrop,
+      onSquareRightClick,
+      onSquareClick,
       id: 'on-piece-drop',
       position: chessPosition,
+      arrows,
       arrowOptions: {
         color: 'yellow',
         secondaryColor: 'red',
