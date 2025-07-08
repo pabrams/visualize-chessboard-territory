@@ -10,6 +10,7 @@ const App = () => {
   const [targetSquare, setTargetSquare] = useState<string>('None');
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     // Initialize theme from localStorage immediately
@@ -36,7 +37,7 @@ const App = () => {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-
+  
   const onPieceDrop = ({
     sourceSquare,
     targetSquare,
@@ -57,6 +58,7 @@ const App = () => {
       setTargetSquare(targetSquare || 'None');
       setDroppedPiece(piece.pieceType);
       setIsSparePiece(piece.isSparePiece);
+      setMoveHistory(chessGame.history());
       return true; 
     } catch (e) {
       console.error(e);
@@ -94,8 +96,7 @@ const App = () => {
       allowDragging: true,
       showNotation: false,
     };
-
-     return <div 
+    return <div 
           data-testid="app-container" style={{
         display: 'flex',
         flexDirection: 'column',
@@ -115,6 +116,36 @@ const App = () => {
 
         <Chessboard options={chessboardOptions} data-testid="chessboard" />
 
+        <div 
+          data-testid="movehistory"
+          style={{
+            width: '300px',
+            height: '150px',
+            border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
+            borderRadius: '4px',
+            padding: '8px',
+            backgroundColor: theme === 'dark' ? '#222' : '#f9f9f9',
+            color: theme === 'dark' ? '#fff' : '#000',
+            overflowY: 'auto',
+            fontSize: '14px',
+            fontFamily: 'monospace'
+          }}
+        >
+          <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Move History:</div>
+          {moveHistory.length === 0 ? (
+            <div style={{ color: theme === 'dark' ? '#888' : '#666', fontStyle: 'italic' }}>
+              No moves yet
+            </div>
+          ) : (
+            <div>
+              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
+                <div key={i} style={{ marginBottom: '2px' }}>
+                  {i + 1}. {moveHistory[i * 2] ?? ''} {moveHistory[i * 2 + 1] ?? ''}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <p style={{
         fontSize: '0.8rem',
         color: '#666'
