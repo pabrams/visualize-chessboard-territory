@@ -1,13 +1,14 @@
-import React from 'react';
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 import App from '../src/App';
-
 let moveToSimulate: { sourceSquare: string; targetSquare: string; piece: { pieceType: string; isSparePiece: boolean } } | null = null;
 
 vi.mock('react-chessboard', () => ({
   Chessboard: ({ options = {} }: any) => {
+    const { onSquareRightClick } = options;
+    
     return (
       <div
         data-testid="chessboard"
@@ -18,13 +19,26 @@ vi.mock('react-chessboard', () => ({
           }
         }}
       >
-        {/* Optionally render some squares for clarity */}
+        {/* Render squares with data-square attributes for testing */}
+        <div 
+          data-square="e2" 
+          data-column="e" 
+          data-row="2" 
+          style={{ width: '50px', height: '50px' }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            if (onSquareRightClick) {
+              onSquareRightClick({ square: 'e2', piece: { pieceType: 'p' } });
+            }
+          }}
+        >
+          e2 square
+        </div>
         <div>Mocked Chessboard</div>
       </div>
     );
   },
 }));
-
 describe('App', () => {
   beforeEach(() => {
     // Reset the move before each test to avoid leakage
@@ -213,4 +227,22 @@ describe('App', () => {
     // Restore global localStorage
     vi.restoreAllMocks();
   });
+
+  test('right-clicking on e2 shows arrows in state', async () => {
+    const { container } = render(<App />);
+
+    // Find the e2 square using its data-square attribute
+    const e2Square = container.querySelector('[data-square="e2"]');
+    expect(e2Square).not.toBeNull();
+
+    if (e2Square) {
+      // Simulate right-clicking on the e2 square
+      fireEvent.contextMenu(e2Square);
+    }
+
+    // Check the arrows list in the DOM (it's hidden but contains the arrow data)
+    const arrowsList = screen.getByTestId('arrows-list');
+    expect(arrowsList).toHaveTextContent('start: e1, end: e2, color: red');
+  });
+
 });
