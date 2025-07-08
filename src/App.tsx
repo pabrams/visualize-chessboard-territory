@@ -8,8 +8,7 @@ const App = () => {
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);  // New state
-
-
+  const [fenInput, setFenInput] = useState('');
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
     if (square === lastClickedSquare && arrows.length > 0) {
@@ -49,7 +48,6 @@ const App = () => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
-
   // Save theme to localStorage when it changes, but handle initial render correctly
   const isInitialRender = useRef(true);
   useEffect(() => {
@@ -130,41 +128,83 @@ const App = () => {
       allowDragging: true,
       showNotation: false,
     };
-    return <div 
-          data-testid="app-container" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        alignItems: 'center',
-        backgroundColor: theme === 'dark' ? '#000' : '#fff'
-      }}>
-        <div data-testid="arrows-list" style={{ display: 'none' }}>
-          {arrows.map(({ startSquare, endSquare, color }, i) => (
-            <div key={i}>
-              start: {startSquare}, end: {endSquare}, color: {color}
-            </div>
-          ))}
-        </div>
-        <Chessboard 
-          options={chessboardOptions} 
-          data-testid="chessboard" 
-        />
+return <div 
+        data-testid="app-container" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+      alignItems: 'center',
+      backgroundColor: theme === 'dark' ? '#000' : '#fff'
+    }}>
+      <div data-testid="arrows-list" style={{ display: 'none' }}>
+        {arrows.map(({ startSquare, endSquare, color }, i) => (
+          <div key={i}>
+            start: {startSquare}, end: {endSquare}, color: {color}
+          </div>
+        ))}
+      </div>
+      <Chessboard 
+        options={chessboardOptions} 
+        data-testid="chessboard" 
+      />
 
-        <div 
-          data-testid="movehistory"
+      {/* New FEN input and apply button */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <input
+          type="text"
+          value={fenInput}
+          onChange={(e) => setFenInput(e.target.value)}
+          placeholder="Enter FEN"
+          data-testid="FEN"
           style={{
-            width: '300px',
-            height: '150px',
+            padding: '8px',
             border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
             borderRadius: '4px',
-            padding: '8px',
             backgroundColor: theme === 'dark' ? '#222' : '#f9f9f9',
             color: theme === 'dark' ? '#fff' : '#000',
-            overflowY: 'auto',
-            fontSize: '14px',
-            fontFamily: 'monospace'
+          }}
+        />
+        <button
+          data-testid="applyFen"
+          onClick={() => {
+            try {
+              chessGame.load(fenInput);
+              setChessPosition(chessGame.fen());
+              setMoveHistory(chessGame.history());
+              setArrows([]);
+              setLastClickedSquare(null);
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          style={{
+            padding: '8px 16px',
+            border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
+            borderRadius: '4px',
+            backgroundColor: theme === 'dark' ? '#333' : '#ddd',
+            color: theme === 'dark' ? '#fff' : '#000',
+            cursor: 'pointer',
           }}
         >
+          Apply
+        </button>
+      </div>
+
+      <div 
+        data-testid="movehistory"
+        style={{
+          width: '300px',
+          height: '150px',
+          border: `1px solid ${theme === 'dark' ? '#666' : '#ccc'}`,
+          borderRadius: '4px',
+          padding: '8px',
+          backgroundColor: theme === 'dark' ? '#222' : '#f9f9f9',
+          color: theme === 'dark' ? '#fff' : '#000',
+          overflowY: 'auto',
+          fontSize: '14px',
+          fontFamily: 'monospace'
+        }}
+      >
           <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Move History:</div>
           {moveHistory.length === 0 ? (
             <div style={{ color: theme === 'dark' ? '#888' : '#666', fontStyle: 'italic' }}>
@@ -180,8 +220,8 @@ const App = () => {
             </div>
           )}
         </div>
-      <button onClick={toggleTheme}>
-        {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      <button onClick={toggleTheme} data-testid="toggleTheme">
+        {theme === 'dark' ? 'light' : 'dark'}
       </button>
       </div>;
 };
