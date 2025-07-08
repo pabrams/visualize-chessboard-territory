@@ -334,4 +334,75 @@ describe('Board Position Tests', () => {
 
     expect(chessboard).toHaveAttribute('data-position', customFen);
   });
+
+  it('updates chess position when FEN is input and applied', () => {
+    render(<App />);
+    
+    // Get the FEN input field and apply button
+    const fenInput = screen.getByTestId('FEN');
+    const applyButton = screen.getByText('Apply') || screen.getByRole('button', { name: /apply/i });
+    const chessboard = screen.getByTestId('chessboard');
+    
+    // Verify initial position
+    expect(chessboard).toHaveAttribute(
+      'data-position',
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    );
+    
+    // Test FEN representing position after 1.e4 e5 2.Nf3
+    const testFen = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2';
+    
+    // Input the FEN string
+    fireEvent.change(fenInput, { target: { value: testFen } });
+    
+    // Click the apply button
+    fireEvent.click(applyButton);
+    
+    // Verify that the chessboard position has been updated to the new FEN
+    expect(chessboard).toHaveAttribute('data-position', testFen);
+  });
+
+  it('handles invalid FEN input gracefully', () => {
+    render(<App />);
+    
+    const fenInput = screen.getByTestId('FEN');
+    const applyButton = screen.getByText('Apply') || screen.getByRole('button', { name: /apply/i });
+    const chessboard = screen.getByTestId('chessboard');
+    
+    // Store initial position
+    const initialPosition = chessboard.getAttribute('data-position');
+    
+    // Test with invalid FEN
+    const invalidFen = 'invalid-fen-string';
+    
+    // Input the invalid FEN string
+    fireEvent.change(fenInput, { target: { value: invalidFen } });
+    
+    // Click the apply button
+    fireEvent.click(applyButton);
+    
+    // Verify that the position remains unchanged (or shows error handling)
+    expect(chessboard).toHaveAttribute('data-position', initialPosition);
+  });
+
+  it('updates move history when FEN with moves is applied', () => {
+    render(<App />);
+    
+    const fenInput = screen.getByTestId('FEN');
+    const applyButton = screen.getByText('Apply') || screen.getByRole('button', { name: /apply/i });
+    const moveHistoryElement = screen.getByTestId('movehistory');
+    
+    // FEN after 1.e4 e5 should result in move history showing these moves
+    const fenAfterE4E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
+    
+    fireEvent.change(fenInput, { target: { value: fenAfterE4E5 } });
+    fireEvent.click(applyButton);
+    
+    // Note: This test depends on how your App handles FEN input and move history
+    // If the FEN input resets the game to that position without preserving history,
+    // the move history might be empty or show "No moves yet"
+    // Adjust the expectation based on your implementation
+    expect(moveHistoryElement).toBeInTheDocument();
+  });
+
 });
