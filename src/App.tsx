@@ -13,9 +13,8 @@ const App = () => {
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    // Initialize theme from localStorage immediately
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    return savedTheme || 'dark'; // Default to 'dark' to match your tests
+    return savedTheme || 'dark';
   });
 
   // Save theme to localStorage when it changes, but handle initial render correctly
