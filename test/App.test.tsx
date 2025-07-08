@@ -246,3 +246,92 @@ describe('App', () => {
   });
 
 });
+
+// Add this test to your existing App.test.tsx file
+
+describe('Board Position Tests', () => {
+  // Parameterized test function
+  const testBoardPosition = (
+    description: string,
+    expectedFen: string,
+    movesToMake: Array<{ sourceSquare: string; targetSquare: string; piece: { pieceType: string; isSparePiece: boolean } }> = []
+  ) => {
+    it(description, () => {
+      render(<App />);
+      const chessboard = screen.getByTestId('chessboard');
+
+      // Make the specified moves
+      movesToMake.forEach(move => {
+        moveToSimulate = move;
+        fireEvent.click(chessboard);
+      });
+
+      // Check that the board position matches the expected FEN
+      expect(chessboard).toHaveAttribute('data-position', expectedFen);
+    });
+  };
+
+  // Test cases using the parameterized function
+  testBoardPosition(
+    'confirms starting position matches starting FEN',
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+  );
+
+  testBoardPosition(
+    'confirms position after 1.e4 matches expected FEN',
+    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    [
+      {
+        sourceSquare: 'e2',
+        targetSquare: 'e4',
+        piece: { pieceType: 'pawn', isSparePiece: false }
+      }
+    ]
+  );
+
+  testBoardPosition(
+    'confirms position after 1.e4 d5 matches expected FEN',
+    'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+    [
+      {
+        sourceSquare: 'e2',
+        targetSquare: 'e4',
+        piece: { pieceType: 'pawn', isSparePiece: false }
+      },
+      {
+        sourceSquare: 'd7',
+        targetSquare: 'd5',
+        piece: { pieceType: 'pawn', isSparePiece: false }
+      }
+    ]
+  );
+
+  testBoardPosition(
+    'confirms position after 1.Nf3 matches expected FEN',
+    'rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1',
+    [
+      {
+        sourceSquare: 'g1',
+        targetSquare: 'f3',
+        piece: { pieceType: 'knight', isSparePiece: false }
+      }
+    ]
+  );
+
+  // You can also create individual tests for specific scenarios
+  it('confirms custom position matches expected FEN', () => {
+    const customFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const movesToMake: Array<{ sourceSquare: string; targetSquare: string; piece: { pieceType: string; isSparePiece: boolean } }> = [];
+
+    render(<App />);
+    const chessboard = screen.getByTestId('chessboard');
+
+    // Make moves if any
+    movesToMake.forEach(move => {
+      moveToSimulate = move;
+      fireEvent.click(chessboard);
+    });
+
+    expect(chessboard).toHaveAttribute('data-position', customFen);
+  });
+});
