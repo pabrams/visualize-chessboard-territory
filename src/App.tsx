@@ -11,6 +11,7 @@ const App = () => {
   const [droppedPiece, setDroppedPiece] = useState<string>('None');
   const [isSparePiece, setIsSparePiece] = useState<boolean>(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [arrows, setArrows] = useState<{ from: Square; to: Square; color: string }[]>([]);
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
@@ -69,6 +70,20 @@ const App = () => {
       onPieceDrop,
       id: 'on-piece-drop',
       position: chessPosition,
+      // NEW: Add arrows and onSquareRightClick
+      arrows: arrows,
+      onSquareRightClick: (square: Square) => {
+        const attacks = chessGame.attacks(square);
+        const newArrows = attacks
+          .map((attacker: Square) => {
+            const piece = chessGame.get(attacker);
+            if (!piece) return null;
+            const color = piece.color === 'w' ? 'red' : 'blue';
+            return { from: attacker, to: square, color };
+          })
+          .filter(Boolean) as { from: Square; to: Square; color: string }[];
+        setArrows(newArrows);
+      },
       arrowOptions: {
         color: 'yellow',
         secondaryColor: 'red',
