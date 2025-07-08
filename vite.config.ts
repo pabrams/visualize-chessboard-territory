@@ -1,6 +1,5 @@
-
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
@@ -12,32 +11,7 @@ export default defineConfig({
     },
     watch: {
       usePolling: true,
-    }
-  },
-  test: {
-    include: ['test/**/*.{test,spec}.{ts,tsx}'],
-    reporters: [
-      ['default', { summary: false }]
-    ],
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './test/setupTests.js',
-    css: {
-      modules: {
-        classNameStrategy: 'non-scoped'
-      }
     },
-    // Mock CSS and static assets
-    testTransformMode: {
-      web: ['**/*.tsx', '**/*.ts', '**/*.jsx', '**/*.js', '**/*.css'],
-      ssr: ['**/*.tsx', '**/*.ts', '**/*.jsx', '**/*.js']
-    },
-    mockReset: true,
-    clearMocks: true,
-    restoreMocks: true
   },
-  define: {
-    'process.env.NODE_ENV': JSON.stringify('test')
-  }
-
-})
+  base: '/visualize-chessboard-territory/',
+});
