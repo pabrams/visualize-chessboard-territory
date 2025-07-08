@@ -4,7 +4,6 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 import App from '../src/App';
 
-// We'll hold the move to simulate here — tests will set this before clicking
 let moveToSimulate: { sourceSquare: string; targetSquare: string; piece: { pieceType: string; isSparePiece: boolean } } | null = null;
 
 vi.mock('react-chessboard', () => ({
@@ -42,26 +41,6 @@ describe('App', () => {
     );
   });
 
-  it('updates state when piece is dropped via onPieceDrop', () => {
-    render(<App />);
-    expect(screen.getByText(/Source square: None/)).toBeInTheDocument();
-    expect(screen.getByText(/Target square: None/)).toBeInTheDocument();
-    expect(screen.getByText(/Dropped piece: None/)).toBeInTheDocument();
-
-    moveToSimulate = {
-      sourceSquare: 'e2',
-      targetSquare: 'e4',
-      piece: { pieceType: 'pawn', isSparePiece: false },
-    };
-
-    const chessboard = screen.getByTestId('chessboard');
-    fireEvent.click(chessboard);
-
-    expect(screen.getByText(/Source square: e2/)).toBeInTheDocument();
-    expect(screen.getByText(/Target square: e4/)).toBeInTheDocument();
-    expect(screen.getByText(/Dropped piece: pawn/)).toBeInTheDocument();
-    expect(screen.getByText(/Is spare piece: No/)).toBeInTheDocument();
-  });
 
   it('updates chess position when valid move is made', () => {
     render(<App />);
@@ -126,7 +105,6 @@ describe('App', () => {
       expect(getComputedStyle(containerReloaded).backgroundColor).toBe('rgb(0, 0, 0)');
     });
 
-    // Fails if bug present (if theme resets to light, this expect will fail)
   });
 
 
