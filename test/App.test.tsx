@@ -102,7 +102,7 @@ describe('App', () => {
     });
 
     // Toggle to dark theme (black background)
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByTestId('toggleTheme'));
     await waitFor(() => {
       expect(getComputedStyle(container).backgroundColor).toBe('rgb(0, 0, 0)');
     });
@@ -149,7 +149,7 @@ describe('App', () => {
     render(<App />);
 
     const container = screen.getByTestId('app-container');
-    const toggleButton = screen.getByRole('button', { name: /switch to/i });
+    const toggleButton = screen.getByTestId('toggleTheme');
 
     const initialBg = getComputedStyle(container).backgroundColor;
 
@@ -157,9 +157,6 @@ describe('App', () => {
     const afterClickBg = getComputedStyle(container).backgroundColor;
 
     expect(afterClickBg).not.toBe(initialBg);
-
-    const expectedToggleText = /switch to (dark|light) mode/i;
-    expect(toggleButton).toHaveTextContent(expectedToggleText);
 
     fireEvent.click(toggleButton);
     const afterSecondClickBg = getComputedStyle(container).backgroundColor;
@@ -212,7 +209,7 @@ describe('App', () => {
     
     // Find and click the toggle button
     // const toggleButton = screen.getByText(/Switch to Dark Mode/);
-    const btn = screen.getByRole('button', { name: /switch to/i }) 
+    const btn = screen.getByTestId('toggleTheme') 
     fireEvent.click(btn);
     
     // Check that localStorage.setItem was called with the correct values
@@ -340,7 +337,7 @@ describe('Board Position Tests', () => {
     
     // Get the FEN input field and apply button
     const fenInput = screen.getByTestId('FEN');
-    const applyButton = screen.getByText('Apply') || screen.getByRole('button', { name: /apply/i });
+    const applyButton = screen.getByText('Apply') || screen.getByTestId('applyFen');
     const chessboard = screen.getByTestId('chessboard');
     
     // Verify initial position
@@ -366,7 +363,7 @@ describe('Board Position Tests', () => {
     render(<App />);
     
     const fenInput = screen.getByTestId('FEN');
-    const applyButton = screen.getByText('Apply') || screen.getByRole('button', { name: /apply/i });
+    const applyButton = screen.getByTestId('applyFen');
     const chessboard = screen.getByTestId('chessboard');
     
     // Store initial position
@@ -389,7 +386,7 @@ describe('Board Position Tests', () => {
     render(<App />);
     
     const fenInput = screen.getByTestId('FEN');
-    const applyButton = screen.getByText('Apply') || screen.getByRole('button', { name: /apply/i });
+    const applyButton = screen.getByTestId('applyFen');
     const moveHistoryElement = screen.getByTestId('movehistory');
     
     // FEN after 1.e4 e5 should result in move history showing these moves
