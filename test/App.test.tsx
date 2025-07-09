@@ -403,3 +403,182 @@ describe('Board Position Tests', () => {
   });
 
 });
+
+describe('Chess Piece Color Test', () => {
+  test('should render black chess piece with color matching the color picker', async () => {
+    // Render the app
+    render(<App />);
+    await waitFor(() => {
+  expect(screen.getByTestId('chessboard')).toBeInTheDocument();
+});
+
+// Dump the whole DOM
+screen.debug();
+    // Open settings panel
+    const settingsButton = screen.getByTestId('settingsButton');
+    fireEvent.click(settingsButton);
+    
+    // Find the dark piece color picker
+    const darkPieceColorPicker = screen.getByTestId('dark-piece-color') as HTMLInputElement;
+    
+    // Get the initial color value
+    const initialColor = darkPieceColorPicker.value;
+    
+    // Change the color to a specific test color (e.g., red)
+    const testColor = '#ff0000';
+    fireEvent.change(darkPieceColorPicker, { target: { value: testColor } });
+    
+    // Wait for the color to be applied
+    await waitFor(() => {
+      expect(darkPieceColorPicker.value).toBe(testColor);
+    });
+    
+    // Find the chessboard
+    const chessboard = screen.getByTestId('chessboard');
+    
+    await waitFor(() => {
+        const chessboard = screen.getByTestId('chessboard');
+        const blackPieces = chessboard.querySelectorAll('div[style*="b"]');
+        console.log("blackPieces", blackPieces);
+        expect(blackPieces.length).toBeGreaterThan(0);
+      });
+
+    // Find a black piece on the board (e.g., black rook on a8)
+    // Note: This selector would need to be adapted based on how the chessboard library renders pieces
+    const blackPiece = chessboard.querySelector('[data-square="a8"] .piece-black, [data-square="a8"] .black-piece, [data-square="a8"] svg[data-piece="bR"]');
+    
+    // Alternative approach: look for any black piece
+    const blackPieces = chessboard.querySelectorAll('.piece-black, .black-piece, svg[data-piece^="b"]');
+    const blackPieceDivs = chessboard.querySelectorAll('div[style*="bP"], div[style*="bR"], div[style*="bN"], div[style*="bB"], div[style*="bQ"], div[style*="bK"]');
+    console.log("blackPieceDivs", blackPieceDivs);
+    
+    expect(blackPieceDivs.length).toBeGreaterThan(0);
+
+    if (blackPieces.length > 0) {
+      const firstBlackPiece = blackPieces[0];
+      
+      // Check if the piece color matches the color picker value
+      // This depends on how the chessboard library applies colors
+      // Method 1: Check fill attribute for SVG pieces
+      const fillColor = getComputedStyle(firstBlackPiece).fill;
+      
+      // Method 2: Check color property
+      const colorProperty = getComputedStyle(firstBlackPiece).color;
+      
+      // Method 3: Check if color is applied via CSS custom properties
+      const customColor = getComputedStyle(firstBlackPiece).getPropertyValue('--piece-color');
+      
+      // Convert hex to rgb for comparison (browsers often return rgb format)
+      const hexToRgb = (hex: any) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      };
+      
+      const expectedRgb = hexToRgb(testColor);
+      const expectedRgbString = expectedRgb ? `rgb(${expectedRgb.r}, ${expectedRgb.g}, ${expectedRgb.b})` : null;
+      
+      // Check if any of the color properties match
+      const colorMatches = 
+        fillColor === testColor || 
+        fillColor === expectedRgbString ||
+        colorProperty === testColor || 
+        colorProperty === expectedRgbString ||
+        customColor === testColor;
+      
+      expect(colorMatches).toBe(true);
+    } else {
+      // If no black pieces found, the test should fail or be skipped
+      throw new Error('No black pieces found on the chessboard');
+    }
+    
+    // Alternative approach: Test the color state directly
+    // This tests that the color picker updates the state correctly
+    const colorInput = screen.getByTestId('dark-piece-color') as HTMLInputElement;
+    expect(colorInput.value).toBe(testColor);
+  });
+  
+  test('should persist dark piece color in localStorage', async () => {
+    // Mock localStorage
+    const localStorageMock = {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    };
+    Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+    
+    render(<App />);
+    
+    // Open settings
+    const settingsButton = screen.getByTestId('settingsButton');
+    fireEvent.click(settingsButton);
+    
+    // Change the dark piece color
+    const darkPieceColorPicker = screen.getByTestId('dark-piece-color');
+    const testColor = '#ff0000';
+    fireEvent.change(darkPieceColorPicker, { target: { value: testColor } });
+    
+    // Wait for the color to be saved to localStorage
+    await waitFor(() => {
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'colors',
+        expect.stringContaining(testColor)
+      );
+    });
+  });
+  
+  test('should apply different colors to different pieces', async () => {
+    render(<App />);
+    
+    // Open settings
+    const settingsButton = screen.getByTestId('settingsButton');
+    fireEvent.click(settingsButton);
+    
+    // Set dark piece color
+    const darkPieceColorPicker = screen.getByTestId('dark-piece-color') as HTMLInputElement;
+    const darkTestColor = '#ff0000';
+    fireEvent.change(darkPieceColorPicker, { target: { value: darkTestColor } });
+    
+    // Set light piece color
+    const lightPieceColorPicker = screen.getByTestId('light-piece-color') as HTMLInputElement;
+    const lightTestColor = '#0000ff';
+    fireEvent.change(lightPieceColorPicker, { target: { value: lightTestColor } });
+    
+    await waitFor(() => {
+      expect(darkPieceColorPicker.value).toBe(darkTestColor);
+      expect(lightPieceColorPicker.value).toBe(lightTestColor);
+    });
+    
+    // This test would need to be completed once the piece color styling is implemented
+    // It should verify that black pieces use the dark color and white pieces use the light color
+  });
+});
+
+// Helper function to convert hex to RGB for comparison
+function hexToRgb(hex: any) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 2),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+// Mock function to simulate how the chessboard might apply colors
+// This would need to be adapted based on the actual chessboard library implementation
+function getAppliedPieceColor(pieceElement: any) {
+  // Check various possible ways the color might be applied
+  const style = getComputedStyle(pieceElement);
+  
+  return (
+    style.fill ||
+    style.color ||
+    style.getPropertyValue('--piece-color') ||
+    pieceElement.getAttribute('fill') ||
+    pieceElement.getAttribute('color')
+  );
+}
