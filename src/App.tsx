@@ -44,10 +44,37 @@ const App = () => {
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
   >([]);
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
+
+  const [colors, setColors] = useState({
+    darkPageBackground: '#0a0a0a',
+    lightPageBackground: '#f8f9fa',
+    darkSquareColor: '#444444',
+    lightSquareColor: '#dddddd',
+    darkPieceColor: '#000000',
+    lightPieceColor: '#ffffff',
+  });
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Load colors from localStorage
+  useEffect(() => {
+    const savedColors = localStorage.getItem('colors');
+    console.log("savedColors", savedColors);
+    if (savedColors) {
+      setColors(JSON.parse(savedColors));
+    }
+  }, []);
+
+  // Save colors to localStorage
+  useEffect(() => {
+    console.log("setting colors to ", JSON.stringify(colors));
+    localStorage.setItem('colors', JSON.stringify(colors));
+  }, [colors]);
 
   // Save theme to localStorage when it changes, but handle initial render correctly
   const isInitialRender = useRef(true);
@@ -67,13 +94,13 @@ const App = () => {
 
   // Apply theme to body element
   useEffect(() => {
-    document.body.style.backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
+    document.body.style.backgroundColor = theme === 'dark' ? colors.darkPageBackground : colors.lightPageBackground;
     document.body.style.color = theme === 'dark' ? '#ffffff' : '#000000';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     document.body.style.fontFamily = 'system-ui, -apple-system, sans-serif';
     document.body.style.transition = 'background-color 0.2s ease';
-  }, [theme]);
+  }, [theme, colors]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -133,16 +160,17 @@ const App = () => {
         overflow: 'hidden',
       },
       darkSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#444444' : '#777777',
+        backgroundColor: colors.darkSquareColor,
         border: 'none',
       },
       lightSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#dddddd' : '#ffffff',
+        backgroundColor: colors.lightSquareColor,
         border: 'none',
       },
       allowDragging: true,
       showNotation: false,
     };
+
 
   return (
     <div 
@@ -155,7 +183,7 @@ const App = () => {
         justifyContent: 'center',
         gap: '2rem',
         padding: '2rem',
-        backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
+        backgroundColor: theme === 'dark' ? colors.darkPageBackground : colors.lightPageBackground,
         color: theme === 'dark' ? '#ffffff' : '#000000',
         transition: 'all 0.2s ease',
         position: 'relative',
@@ -169,6 +197,112 @@ const App = () => {
           </div>
         ))}
       </div>
+
+      {/* Settings button */}
+      <button
+        onClick={() => setSettingsOpen(!settingsOpen)}
+        data-testid="settingsButton"
+        title="Open settings"
+        style={{
+          position: 'absolute',
+          top: '1.5rem',
+          right: '5rem', // Positioned to the left of theme toggle
+          background: theme === 'dark' ? '#222222' : '#ffffff',
+          border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+          borderRadius: '8px',
+          padding: '12px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          color: theme === 'dark' ? '#ffffff' : '#000000',
+          transition: 'all 0.2s ease',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
+            : '0 6px 16px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)';
+        }}
+      >
+        {/* Gear icon for settings */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
+
+      {/* Settings panel */}
+      {settingsOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '4rem',
+            right: '1.5rem',
+            background: theme === 'dark' ? '#222222' : '#ffffff',
+            border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+            borderRadius: '8px',
+            padding: '1rem',
+            zIndex: 1000,
+            boxShadow: theme === 'dark' 
+              ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+              : '0 4px 12px rgba(0, 0, 0, 0.1)',
+            minWidth: '200px',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Dark Page Background</label>
+            <input
+              type="color"
+              value={colors.darkPageBackground}
+              onChange={(e) => setColors({ ...colors, darkPageBackground: e.target.value })}
+              data-testid="dark-page-background"
+            />
+            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Light Page Background</label>
+            <input
+              type="color"
+              value={colors.lightPageBackground}
+              onChange={(e) => setColors({ ...colors, lightPageBackground: e.target.value })}
+              data-testid="light-page-background"
+            />
+            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Dark Square Color</label>
+            <input
+              type="color"
+              value={colors.darkSquareColor}
+              onChange={(e) => setColors({ ...colors, darkSquareColor: e.target.value })}
+              data-testid="dark-square-color"
+            />
+            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Light Square Color</label>
+            <input
+              type="color"
+              value={colors.lightSquareColor}
+              onChange={(e) => setColors({ ...colors, lightSquareColor: e.target.value })}
+              data-testid="light-square-color"
+            />
+            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Dark Piece Color</label>
+            <input
+              type="color"
+              value={colors.darkPieceColor}
+              onChange={(e) => setColors({ ...colors, darkPieceColor: e.target.value })}
+              data-testid="dark-piece-color"
+            />
+            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Light Piece Color</label>
+            <input
+              type="color"
+              value={colors.lightPieceColor}
+              onChange={(e) => setColors({ ...colors, lightPieceColor: e.target.value })}
+              data-testid="light-piece-color"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Theme toggle button */}
       <button
