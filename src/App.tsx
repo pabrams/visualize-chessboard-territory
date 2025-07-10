@@ -2,6 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
+interface Colors {
+  pageBackground: string;
+  pageForeground: string;
+  lightSquare: string;
+  darkSquare: string;
+  blackArrow: string;
+  whiteArrow: string;
+}
+
 const App = () => {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
@@ -9,6 +18,47 @@ const App = () => {
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);
   const [fenInput, setFenInput] = useState('');
+  const [fenInput, setFenInput] = useState('');
+
+  const [arrows, setArrows] = useState<
+    { startSquare: string; endSquare: string, color: string }[]
+  >([]);
+   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    return savedTheme || 'dark';
+  });
+  const [colors, setColors] = useState<{ light: Colors; dark: Colors }>({
+    light: {
+      pageBackground: '#f8f9fa',
+      pageForeground: '#000000',
+      lightSquare: '#ffffff',
+      darkSquare: '#777777',
+      blackArrow: 'blue',
+      whiteArrow: 'red',
+    },
+    dark: {
+      pageBackground: '#0a0a0a',
+      pageForeground: '#ffffff',
+      lightSquare: '#dddddd',
+      darkSquare: '#444444',
+      blackArrow: 'blue',
+      whiteArrow: 'red',
+    },
+  });
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Load colors from localStorage
+  useEffect(() => {
+    const savedColors = localStorage.getItem('colors');
+    if (savedColors) {
+      setColors(JSON.parse(savedColors));
+    }
+  }, []);
+
+  // Save colors to localStorage
+  useEffect(() => {
+    localStorage.setItem('colors', JSON.stringify(colors));
+  }, [colors]);
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
     if (square === lastClickedSquare && arrows.length > 0) {
@@ -23,7 +73,7 @@ const App = () => {
         newArrows.push({
           startSquare: attackerSquare,
           endSquare: square,
-          color: 'red',  // White attackers red
+          color: colors[theme].whiteArrow,  // White attackers red
         });
       });
       
@@ -32,7 +82,7 @@ const App = () => {
         newArrows.push({
           startSquare: attackerSquare,
           endSquare: square,
-          color: 'blue',  // Black attackers blue
+          color: colors[theme].blackArrow,  // Black attackers
         });
       });
 
@@ -133,11 +183,11 @@ const App = () => {
         overflow: 'hidden',
       },
       darkSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#444444' : '#777777',
+        backgroundColor: colors[theme].darkSquare,
         border: 'none',
       },
       lightSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#dddddd' : '#ffffff',
+        backgroundColor: colors[theme].lightSquare,
         border: 'none',
       },
       allowDragging: true,
@@ -155,8 +205,8 @@ const App = () => {
         justifyContent: 'center',
         gap: '2rem',
         padding: '2rem',
-        backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
-        color: theme === 'dark' ? '#ffffff' : '#000000',
+        backgroundColor: colors[theme].pageBackground,
+        color: colors[theme].pageForeground,
         transition: 'all 0.2s ease',
         position: 'relative',
         boxSizing: 'border-box'
@@ -311,6 +361,101 @@ const App = () => {
             Apply
           </button>
         </div>
+
+      {/* Settings button */}
+      <button
+        onClick={() => setShowSettings(!showSettings)}
+        data-testid="settingsButton"
+        title="Open settings"
+        style={{
+          position: 'absolute',
+          top: '1.5rem',
+          right: '5rem', // Positioned to the left of theme toggle
+          background: theme === 'dark' ? '#222222' : '#ffffff',
+          border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+          borderRadius: '8px',
+          padding: '12px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          color: theme === 'dark' ? '#ffffff' : '#000000',
+          transition: 'all 0.2s ease',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
+            : '0 6px 16px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)';
+        }}
+      >
+        {/* Gear icon for settings */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
+ {/* Settings panel */}
+      {showSettings && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '80px',
+            right: '20px',
+            backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+            border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: theme === 'dark' 
+              ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+              : '0 4px 12px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000,
+            minWidth: '300px',
+          }}
+        >
+          <h3 style={{ marginBottom: '15px', color: theme === 'dark' ? '#ffffff' : '#000000' }}>
+            {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Settings
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            {Object.entries(colors[theme]).map(([key, value]) => {
+              const label = key.replace(/([A-Z])/g, ' $1').trim();
+              const dataTestId = `${theme}-theme-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+              return (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '12px', color: theme === 'dark' ? '#cccccc' : '#666666' }}>
+                    {label}
+                  </label>
+                  <input
+                    type="color"
+                    value={value}
+                    onChange={(e) =>
+                      setColors((prev) => ({
+                        ...prev,
+                        [theme]: { ...prev[theme], [key]: e.target.value },
+                      }))
+                    }
+                    data-testid={dataTestId}
+                    style={{
+                      width: '100%',
+                      height: '30px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
         {/* Move history */}
         <div 
