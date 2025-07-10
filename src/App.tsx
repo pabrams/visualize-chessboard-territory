@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
+// ... existing code ...
+
 const App = () => {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
@@ -41,6 +43,7 @@ const App = () => {
     }
   };
 
+  
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
   >([]);
@@ -48,6 +51,51 @@ const App = () => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
+
+  // Settings panel state
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Color settings with defaults
+  const defaultColors = {
+    light: {
+      'page-background-color': '#f8f9fa',
+      'page-foreground-color': '#000000',
+      'light-square-color': '#ffffff',
+      'dark-square-color': '#777777',
+      'black-arrow-color': 'blue',
+      'white-arrow-color': 'red'
+    },
+    dark: {
+      'page-background-color': '#0a0a0a',
+      'page-foreground-color': '#ffffff',
+      'light-square-color': '#dddddd',
+      'dark-square-color': '#444444',
+      'black-arrow-color': 'blue',
+      'white-arrow-color': 'red'
+    }
+  };
+
+  const [colorSettings, setColorSettings] = useState(() => {
+    const saved = localStorage.getItem('colorSettings');
+    return saved ? JSON.parse(saved) : defaultColors;
+  });
+
+  // Save color settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('colorSettings', JSON.stringify(colorSettings));
+  }, [colorSettings]);
+
+  const updateColorSetting = (theme: 'light' | 'dark', colorKey: string, value: string) => {
+    setColorSettings(prev => ({
+      ...prev,
+      [theme]: {
+        ...prev[theme],
+        [colorKey]: value
+      }
+    }));
+  };
+
+  const currentColors = colorSettings[theme];
 
   // Save theme to localStorage when it changes, but handle initial render correctly
   const isInitialRender = useRef(true);
@@ -65,18 +113,22 @@ const App = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Apply theme to body element
+  // Apply theme to body element with dynamic colors
   useEffect(() => {
-    document.body.style.backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
-    document.body.style.color = theme === 'dark' ? '#ffffff' : '#000000';
+    document.body.style.backgroundColor = currentColors['page-background-color'];
+    document.body.style.color = currentColors['page-foreground-color'];
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     document.body.style.fontFamily = 'system-ui, -apple-system, sans-serif';
     document.body.style.transition = 'background-color 0.2s ease';
-  }, [theme]);
+  }, [currentColors]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
   };
   
   const onPieceDrop = ({
@@ -106,6 +158,39 @@ const App = () => {
     }
   };
 
+
+  const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
+    if (square === lastClickedSquare && arrows.length > 0) {
+      // Clear arrows on second click of same square
+      setArrows([]);
+      setLastClickedSquare(null);
+    } else {
+      const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
+
+      const whiteAttackers = chessGame.attackers(square as Square, 'w');
+      whiteAttackers.forEach((attackerSquare) => {
+        newArrows.push({
+          startSquare: attackerSquare,
+          endSquare: square,
+          color: currentColors['white-arrow-color'],  // Use dynamic color
+        });
+      });
+      
+      const blackAttackers = chessGame.attackers(square as Square, 'b');
+      blackAttackers.forEach((attackerSquare) => {
+        newArrows.push({
+          startSquare: attackerSquare,
+          endSquare: square,
+          color: currentColors['black-arrow-color'],  // Use dynamic color
+        });
+      });
+
+      setArrows(newArrows);
+      setLastClickedSquare(square);
+    }
+  };
+  
+
   const chessboardOptions = {
       onPieceDrop,
       onSquareRightClick,
@@ -133,11 +218,11 @@ const App = () => {
         overflow: 'hidden',
       },
       darkSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#444444' : '#777777',
+        backgroundColor: currentColors['dark-square-color'],
         border: 'none',
       },
       lightSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#dddddd' : '#ffffff',
+        backgroundColor: currentColors['light-square-color'],
         border: 'none',
       },
       allowDragging: true,
@@ -155,8 +240,8 @@ const App = () => {
         justifyContent: 'center',
         gap: '2rem',
         padding: '2rem',
-        backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
-        color: theme === 'dark' ? '#ffffff' : '#000000',
+        backgroundColor: currentColors['page-background-color'],
+        color: currentColors['page-foreground-color'],
         transition: 'all 0.2s ease',
         position: 'relative',
         boxSizing: 'border-box'
@@ -171,14 +256,14 @@ const App = () => {
       </div>
 
       {/* Theme toggle button */}
-      <button
+       <button
         onClick={toggleTheme}
         data-testid="toggleTheme"
         title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         style={{
           position: 'absolute',
           top: '1.5rem',
-          right: '1.5rem',
+          right: '5rem',
           background: theme === 'dark' ? '#222222' : '#ffffff',
           border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
           borderRadius: '8px',
@@ -217,6 +302,107 @@ const App = () => {
           </svg>
         )}
       </button>
+
+      {/* Settings button */}
+      <button
+        onClick={toggleSettings}
+        data-testid="settingsButton"
+        title="Settings"
+        style={{
+          position: 'absolute',
+          top: '1.5rem',
+          right: '1.5rem',
+          background: theme === 'dark' ? '#222222' : '#ffffff',
+          border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+          borderRadius: '8px',
+          padding: '12px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          color: theme === 'dark' ? '#ffffff' : '#000000',
+          transition: 'all 0.2s ease',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
+            : '0 6px 16px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)';
+        }}
+      >
+        {/* Settings gear icon */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+      </button>
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '5rem',
+            right: '1.5rem',
+            background: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+            border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+            borderRadius: '12px',
+            padding: '1.5rem',
+            zIndex: 999,
+            boxShadow: theme === 'dark' 
+              ? '0 8px 24px rgba(0, 0, 0, 0.4)' 
+              : '0 8px 24px rgba(0, 0, 0, 0.15)',
+            minWidth: '300px',
+            maxHeight: '70vh',
+            overflowY: 'auto',
+          }}
+        >
+          <h3 style={{ 
+            margin: '0 0 1rem 0', 
+            fontSize: '16px',
+            color: theme === 'dark' ? '#ffffff' : '#000000'
+          }}>
+            {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Colors
+          </h3>
+          
+          {Object.entries(currentColors).map(([colorKey, colorValue]) => (
+            <div key={colorKey} style={{ marginBottom: '1rem' }}>
+              <label 
+                style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem',
+                  fontSize: '14px',
+                  color: theme === 'dark' ? '#cccccc' : '#333333',
+                  textTransform: 'capitalize'
+                }}
+              >
+                {colorKey.replace(/-/g, ' ')}
+              </label>
+              <input
+                type="color"
+                value={colorValue}
+                data-testid={`${theme}-theme-${colorKey}`}
+                onChange={(e) => updateColorSetting(theme, colorKey, e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  border: `1px solid ${theme === 'dark' ? '#444' : '#ccc'}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backgroundColor: 'transparent',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main content container */}
       <div style={{
