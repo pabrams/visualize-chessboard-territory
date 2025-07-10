@@ -286,20 +286,6 @@ const App = () => {
               onChange={(e) => setColors({ ...colors, lightSquareColor: e.target.value })}
               data-testid="light-square-color"
             />
-            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Dark Piece Color</label>
-            <input
-              type="color"
-              value={colors.darkPieceColor}
-              onChange={(e) => setColors({ ...colors, darkPieceColor: e.target.value })}
-              data-testid="dark-piece-color"
-            />
-            <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>Light Piece Color</label>
-            <input
-              type="color"
-              value={colors.lightPieceColor}
-              onChange={(e) => setColors({ ...colors, lightPieceColor: e.target.value })}
-              data-testid="light-piece-color"
-            />
           </div>
         </div>
       )}
