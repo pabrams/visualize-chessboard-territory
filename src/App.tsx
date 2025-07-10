@@ -10,7 +10,7 @@ const App = () => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1); // -1 means starting position
   const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);
   const [fenInput, setFenInput] = useState('');
-const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
@@ -54,10 +54,8 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     localStorage.setItem('darkThemeColors', JSON.stringify(darkThemeColors));
   }, [lightThemeColors, darkThemeColors]);
 
-  // Get the last move for highlighting
   const getLastMove = () => {
     if (currentMoveIndex >= 0 && moveHistory.length > 0) {
-      // Create a temporary game to get move details
       const tempGame = new Chess();
       for (let i = 0; i <= currentMoveIndex; i++) {
         tempGame.move(moveHistory[i]);
@@ -68,9 +66,6 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return null;
   };
 
-  const lastMove = getLastMove();
-
-  // Navigation functions
   const goToStart = () => {
     const tempGame = new Chess();
     setChessPosition(tempGame.fen());
@@ -222,18 +217,10 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     }
   };
 
-  // Create custom square styles for highlighting last move
-  // const getCustomSquareStyles = () => {
-  //   const styles: { [square: string]: React.CSSProperties } = {};
-    
-  //   if (lastMove) {
-  //     const highlightColor = theme === 'dark' ? 'rgba(255, 255, 0, 0.4)' : 'rgba(255, 215, 0, 0.6)';
-  //     styles[lastMove.from] = { backgroundColor: highlightColor };
-  //     styles[lastMove.to] = { backgroundColor: highlightColor };
-  //   }
-    
-  //   return styles;
-  // };
+  const lastMove = getLastMove();
+  console.log("lastMove", lastMove);
+  const sourceSquare = lastMove ? lastMove.from : null;
+  const targetSquare = lastMove ? lastMove.to : null;
 
   const chessboardOptions = {
       onPieceDrop,
@@ -241,7 +228,6 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
       arrows,
       id: 'chessboard-options',
       position: chessPosition,
-      // customSquareStyles: getCustomSquareStyles(),
       arrowOptions: {
         color: 'yellow',
         secondaryColor: 'red',
@@ -667,35 +653,27 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
             Move History
           </div>
           {moveHistory.length === 0 ? (
-            <div style={{ 
-              color: theme === 'dark' ? '#666' : '#999', 
-              fontStyle: 'italic',
-              fontSize: '13px'
-            }}>
+            <div style={{ color: theme === 'dark' ? '#666' : '#999', fontStyle: 'italic', fontSize: '13px' }}>
               No moves yet
             </div>
           ) : (
             <div>
-              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => {
+              {Array.from({ length: Math.ceil(moveHistory.length / 2) + (moveHistory.length % 2 === 0 ? 1 : 0) }).map((_, i) => {
                 const whiteMove = moveHistory[i * 2];
                 const blackMove = moveHistory[i * 2 + 1];
                 const whiteMoveIndex = i * 2;
                 const blackMoveIndex = i * 2 + 1;
-                
+
                 return (
-                  <div key={i} style={{ 
-                    marginBottom: '4px',
-                    padding: '2px 0',
-                    lineHeight: '1.4'
-                  }}>
+                  <div key={i} style={{ marginBottom: '4px', padding: '2px 0', lineHeight: '1.4' }}>
                     <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
                       {i + 1}.
                     </span>{' '}
-                    {whiteMove && (
-                      <span 
-                        style={{ 
+                    {whiteMove ? (
+                      <span
+                        style={{
                           color: theme === 'dark' ? '#ffffff' : '#000000',
-                          backgroundColor: currentMoveIndex === whiteMoveIndex 
+                          backgroundColor: currentMoveIndex === whiteMoveIndex
                             ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
                             : 'transparent',
                           padding: '1px 3px',
@@ -704,12 +682,18 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
                       >
                         {whiteMove}
                       </span>
+                    ) : (
+                      currentMoveIndex === whiteMoveIndex && (
+                        <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                          ..
+                        </span>
+                      )
                     )}{' '}
                     {blackMove ? (
-                      <span 
-                        style={{ 
+                      <span
+                        style={{
                           color: theme === 'dark' ? '#ffffff' : '#000000',
-                          backgroundColor: currentMoveIndex === blackMoveIndex 
+                          backgroundColor: currentMoveIndex === blackMoveIndex
                             ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
                             : 'transparent',
                           padding: '1px 3px',
@@ -719,7 +703,7 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
                         {blackMove}
                       </span>
                     ) : (
-                      currentMoveIndex === whiteMoveIndex && (
+                      currentMoveIndex === blackMoveIndex && (
                         <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
                           ..
                         </span>
@@ -729,6 +713,7 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
                 );
               })}
             </div>
+
           )}
         </div>
       </div>
