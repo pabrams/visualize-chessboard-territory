@@ -12,6 +12,10 @@ const App = () => {
   const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);
   const [fenInput, setFenInput] = useState('');
 
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    return savedTheme || 'dark';
+  });
   const [showSettings, setShowSettings] = useState(false);
 
   const [lightThemeColors, setLightThemeColors] = useState({
@@ -86,10 +90,6 @@ const App = () => {
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
   >([]);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    return savedTheme || 'dark';
-  });
 
   // Save theme to localStorage when it changes, but handle initial render correctly
   const isInitialRender = useRef(true);
@@ -149,7 +149,22 @@ const App = () => {
   };
 
   const chessboardOptions = {
-      // ... existing ...
+      onPieceDrop,
+      onSquareRightClick,
+      arrows,
+      id: 'chessboard-options',
+      position: chessPosition,
+      arrowOptions: {
+        color: 'yellow',
+        secondaryColor: 'red',
+        tertiaryColor: 'blue',
+        arrowLengthReducerDenominator: 4,
+        sameTargetArrowLengthReducerDenominator: 2,
+        arrowWidthDenominator: 10,
+        activeArrowWidthMultiplier: 1.5,
+        opacity: 0.5,
+        activeOpacity: 0.6,
+      },
       boardStyle: {
         width: '50vmin',
         height: '50vmin',
