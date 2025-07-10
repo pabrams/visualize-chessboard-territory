@@ -13,10 +13,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "zip": "./zip_project.sh",
-    "zip:init": "npm run zip -- preedit.zip",
-    "zip:beetle": "npm run zip -- postedit_beetle.zip",
-    "zip:sonnet": "npm run zip -- postedit_sonnet.zip",
-    "zip:rewrite": "npm run zip -- rewrite.zip",
+    "zip:init": "npm run zip -- preedit",
+    "zip:beetle": "npm run zip -- postedit_beetle",
+    "zip:sonnet": "npm run zip -- postedit_sonnet",
+    "zip:rewrite": "npm run zip -- rewrite",
     "preinstall": "node -e \"if (!process.env.npm_execpath?.includes('pnpm')) { console.error('🚫 Use pnpm. Run: pnpm install'); process.exit(1) }\""
   },
   "dependencies": {
