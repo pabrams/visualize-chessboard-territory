@@ -9,12 +9,12 @@ BASENAME="${ZIPFILE%.zip}"
 echo "Deleting existing zip files in the current directory..."
 rm -f ./*.zip
 
-# --- Git branch logic ---
+# --- Git branch logic with remote check ---
 
-# Find a unique branch name based on basename
 BRANCH="$BASENAME"
 i=1
-while git show-ref --verify --quiet "refs/heads/$BRANCH"; do
+while git show-ref --verify --quiet "refs/heads/$BRANCH" || \
+      git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; do
   BRANCH="${BASENAME}-$i"
   ((i++))
 done
