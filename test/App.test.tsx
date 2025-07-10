@@ -214,7 +214,7 @@ describe('App', () => {
 
     // Check the arrows list in the DOM (it's hidden but contains the arrow data)
     const arrowsList = screen.getByTestId('arrows-list');
-    expect(arrowsList).toHaveTextContent('start: e1, end: e2, color: red');
+    expect(arrowsList).toHaveTextContent('start: d1, end: e2, color: #ff0000');
   });
 
 });
