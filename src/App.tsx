@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
@@ -9,10 +7,10 @@ const App = () => {
   const chessGame = chessGameRef.current;
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1); // -1 means starting position
   const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);
   const [fenInput, setFenInput] = useState('');
-
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
@@ -55,6 +53,75 @@ const App = () => {
     localStorage.setItem('lightThemeColors', JSON.stringify(lightThemeColors));
     localStorage.setItem('darkThemeColors', JSON.stringify(darkThemeColors));
   }, [lightThemeColors, darkThemeColors]);
+
+  // Get the last move for highlighting
+  const getLastMove = () => {
+    if (currentMoveIndex >= 0 && moveHistory.length > 0) {
+      // Create a temporary game to get move details
+      const tempGame = new Chess();
+      for (let i = 0; i <= currentMoveIndex; i++) {
+        tempGame.move(moveHistory[i]);
+      }
+      const history = tempGame.history({ verbose: true });
+      return history[history.length - 1];
+    }
+    return null;
+  };
+
+  const lastMove = getLastMove();
+
+  // Navigation functions
+  const goToStart = () => {
+    const tempGame = new Chess();
+    setChessPosition(tempGame.fen());
+    setCurrentMoveIndex(-1);
+    setArrows([]);
+    setLastClickedSquare(null);
+  };
+
+  const goToEnd = () => {
+    if (moveHistory.length === 0) return;
+    const tempGame = new Chess();
+    moveHistory.forEach(move => tempGame.move(move));
+    setChessPosition(tempGame.fen());
+    setCurrentMoveIndex(moveHistory.length - 1);
+    setArrows([]);
+    setLastClickedSquare(null);
+  };
+
+  const goForward = () => {
+    if (currentMoveIndex >= moveHistory.length - 1) return;
+    const newIndex = currentMoveIndex + 1;
+    const tempGame = new Chess();
+    for (let i = 0; i <= newIndex; i++) {
+      tempGame.move(moveHistory[i]);
+    }
+    setChessPosition(tempGame.fen());
+    setCurrentMoveIndex(newIndex);
+    setArrows([]);
+    setLastClickedSquare(null);
+  };
+
+  const goBackward = () => {
+    if (currentMoveIndex < 0) return;
+    const newIndex = currentMoveIndex - 1;
+    if (newIndex < 0) {
+      goToStart();
+    } else {
+      const tempGame = new Chess();
+      for (let i = 0; i <= newIndex; i++) {
+        tempGame.move(moveHistory[i]);
+      }
+      setChessPosition(tempGame.fen());
+      setCurrentMoveIndex(newIndex);
+      setArrows([]);
+      setLastClickedSquare(null);
+    }
+  };
+
+  // Check if we're at the final position
+  const isAtFinalPosition = currentMoveIndex === moveHistory.length - 1 || moveHistory.length === 0;
+
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
     if (square === lastClickedSquare && arrows.length > 0) {
@@ -126,6 +193,11 @@ const App = () => {
     targetSquare,
     piece
   }: PieceDropHandlerArgs) => {
+    // Prevent moves if not at final position
+    if (!isAtFinalPosition) {
+      return false;
+    }
+
     if (!targetSquare) {
       return false;
     }
@@ -137,7 +209,9 @@ const App = () => {
         promotion: 'q'
       });
       setChessPosition(chessGame.fen());
-      setMoveHistory(chessGame.history());
+      const newHistory = chessGame.history();
+      setMoveHistory(newHistory);
+      setCurrentMoveIndex(newHistory.length - 1);
       // Clear arrows and reset last clicked after move
       setArrows([]);
       setLastClickedSquare(null);
@@ -148,12 +222,26 @@ const App = () => {
     }
   };
 
+  // Create custom square styles for highlighting last move
+  const getCustomSquareStyles = () => {
+    const styles: { [square: string]: React.CSSProperties } = {};
+    
+    if (lastMove) {
+      const highlightColor = theme === 'dark' ? 'rgba(255, 255, 0, 0.4)' : 'rgba(255, 215, 0, 0.6)';
+      styles[lastMove.from] = { backgroundColor: highlightColor };
+      styles[lastMove.to] = { backgroundColor: highlightColor };
+    }
+    
+    return styles;
+  };
+
   const chessboardOptions = {
       onPieceDrop,
       onSquareRightClick,
       arrows,
       id: 'chessboard-options',
       position: chessPosition,
+      customSquareStyles: getCustomSquareStyles(),
       arrowOptions: {
         color: 'yellow',
         secondaryColor: 'red',
@@ -182,7 +270,6 @@ const App = () => {
         backgroundColor: currentThemeColors.lightSquareColor,
         border: 'none',
       },
-      // ... existing ...
     };
 
   return (
@@ -273,6 +360,109 @@ const App = () => {
           data-testid="chessboard" 
         />
 
+        {/* Navigation buttons */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'center',
+          padding: '1rem',
+          backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+          borderRadius: '12px',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+          border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+        }}>
+          <button
+            onClick={goToStart}
+            disabled={currentMoveIndex < 0}
+            data-testid="goToStart"
+            title="Go to start"
+            style={{
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: '6px',
+              backgroundColor: currentMoveIndex < 0 
+                ? (theme === 'dark' ? '#333' : '#ccc')
+                : (theme === 'dark' ? '#555' : '#888'),
+              color: currentMoveIndex < 0 
+                ? (theme === 'dark' ? '#666' : '#999')
+                : '#ffffff',
+              cursor: currentMoveIndex < 0 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ⏮
+          </button>
+          <button
+            onClick={goBackward}
+            disabled={currentMoveIndex < 0}
+            data-testid="goBackward"
+            title="Previous move"
+            style={{
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: '6px',
+              backgroundColor: currentMoveIndex < 0 
+                ? (theme === 'dark' ? '#333' : '#ccc')
+                : (theme === 'dark' ? '#555' : '#888'),
+              color: currentMoveIndex < 0 
+                ? (theme === 'dark' ? '#666' : '#999')
+                : '#ffffff',
+              cursor: currentMoveIndex < 0 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ◀
+          </button>
+          <button
+            onClick={goForward}
+            disabled={currentMoveIndex >= moveHistory.length - 1}
+            data-testid="goForward"
+            title="Next move"
+            style={{
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: '6px',
+              backgroundColor: currentMoveIndex >= moveHistory.length - 1 
+                ? (theme === 'dark' ? '#333' : '#ccc')
+                : (theme === 'dark' ? '#555' : '#888'),
+              color: currentMoveIndex >= moveHistory.length - 1 
+                ? (theme === 'dark' ? '#666' : '#999')
+                : '#ffffff',
+              cursor: currentMoveIndex >= moveHistory.length - 1 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ▶
+          </button>
+          <button
+            onClick={goToEnd}
+            disabled={currentMoveIndex >= moveHistory.length - 1}
+            data-testid="goToEnd"
+            title="Go to end"
+            style={{
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: '6px',
+              backgroundColor: currentMoveIndex >= moveHistory.length - 1 
+                ? (theme === 'dark' ? '#333' : '#ccc')
+                : (theme === 'dark' ? '#555' : '#888'),
+              color: currentMoveIndex >= moveHistory.length - 1 
+                ? (theme === 'dark' ? '#666' : '#999')
+                : '#ffffff',
+              cursor: currentMoveIndex >= moveHistory.length - 1 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ⏭
+          </button>
+        </div>
+
         {/* FEN input container */}
         <div style={{ 
           display: 'flex', 
@@ -321,7 +511,9 @@ const App = () => {
               try {
                 chessGame.load(fenInput);
                 setChessPosition(chessGame.fen());
-                setMoveHistory(chessGame.history());
+                const newHistory = chessGame.history();
+                setMoveHistory(newHistory);
+                setCurrentMoveIndex(newHistory.length - 1);
                 setArrows([]);
                 setLastClickedSquare(null);
               } catch (e) {
@@ -479,23 +671,58 @@ const App = () => {
             </div>
           ) : (
             <div>
-              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
-                <div key={i} style={{ 
-                  marginBottom: '4px',
-                  padding: '2px 0',
-                  lineHeight: '1.4'
-                }}>
-                  <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                    {i + 1}.
-                  </span>{' '}
-                  <span style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>
-                    {moveHistory[i * 2] ?? ''}
-                  </span>{' '}
-                  <span style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>
-                    {moveHistory[i * 2 + 1] ?? ''}
-                  </span>
-                </div>
-              ))}
+              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => {
+                const whiteMove = moveHistory[i * 2];
+                const blackMove = moveHistory[i * 2 + 1];
+                const whiteMoveIndex = i * 2;
+                const blackMoveIndex = i * 2 + 1;
+                
+                return (
+                  <div key={i} style={{ 
+                    marginBottom: '4px',
+                    padding: '2px 0',
+                    lineHeight: '1.4'
+                  }}>
+                    <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                      {i + 1}.
+                    </span>{' '}
+                    {whiteMove && (
+                      <span 
+                        style={{ 
+                          color: theme === 'dark' ? '#ffffff' : '#000000',
+                          backgroundColor: currentMoveIndex === whiteMoveIndex 
+                            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                            : 'transparent',
+                          padding: '1px 3px',
+                          borderRadius: '3px'
+                        }}
+                      >
+                        {whiteMove}
+                      </span>
+                    )}{' '}
+                    {blackMove ? (
+                      <span 
+                        style={{ 
+                          color: theme === 'dark' ? '#ffffff' : '#000000',
+                          backgroundColor: currentMoveIndex === blackMoveIndex 
+                            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                            : 'transparent',
+                          padding: '1px 3px',
+                          borderRadius: '3px'
+                        }}
+                      >
+                        {blackMove}
+                      </span>
+                    ) : (
+                      currentMoveIndex === whiteMoveIndex && (
+                        <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                          ..
+                        </span>
+                      )
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
