@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
@@ -9,6 +11,46 @@ const App = () => {
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [lastClickedSquare, setLastClickedSquare] = useState<string | null>(null);
   const [fenInput, setFenInput] = useState('');
+
+  const [showSettings, setShowSettings] = useState(false);
+
+  const [lightThemeColors, setLightThemeColors] = useState({
+    pageBackgroundColor: '#f8f9fa',
+    pageForegroundColor: '#000000',
+    lightSquareColor: '#ffffff',
+    darkSquareColor: '#777777',
+    whiteArrowColor: '#ff0000',
+    blackArrowColor: '#0000ff'
+  });
+
+  const [darkThemeColors, setDarkThemeColors] = useState({
+    pageBackgroundColor: '#0a0a0a',
+    pageForegroundColor: '#ffffff',
+    lightSquareColor: '#dddddd',
+    darkSquareColor: '#444444',
+    whiteArrowColor: '#ff0000',
+    blackArrowColor: '#0000ff'
+  });
+
+  const currentThemeColors = theme === 'dark' ? darkThemeColors : lightThemeColors;
+
+  // Load from localStorage
+  useEffect(() => {
+    const savedLight = localStorage.getItem('lightThemeColors');
+    if (savedLight) {
+      setLightThemeColors(JSON.parse(savedLight));
+    }
+    const savedDark = localStorage.getItem('darkThemeColors');
+    if (savedDark) {
+      setDarkThemeColors(JSON.parse(savedDark));
+    }
+  }, []);
+
+  // Save to localStorage
+  useEffect(() => {
+    localStorage.setItem('lightThemeColors', JSON.stringify(lightThemeColors));
+    localStorage.setItem('darkThemeColors', JSON.stringify(darkThemeColors));
+  }, [lightThemeColors, darkThemeColors]);
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
     if (square === lastClickedSquare && arrows.length > 0) {
@@ -23,7 +65,7 @@ const App = () => {
         newArrows.push({
           startSquare: attackerSquare,
           endSquare: square,
-          color: 'red',  // White attackers red
+          color: currentThemeColors.whiteArrowColor,  // White attackers
         });
       });
       
@@ -32,7 +74,7 @@ const App = () => {
         newArrows.push({
           startSquare: attackerSquare,
           endSquare: square,
-          color: 'blue',  // Black attackers blue
+          color: currentThemeColors.blackArrowColor,  // Black attackers
         });
       });
 
@@ -67,18 +109,18 @@ const App = () => {
 
   // Apply theme to body element
   useEffect(() => {
-    document.body.style.backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
-    document.body.style.color = theme === 'dark' ? '#ffffff' : '#000000';
+    document.body.style.backgroundColor = currentThemeColors.pageBackgroundColor;
+    document.body.style.color = currentThemeColors.pageForegroundColor;
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     document.body.style.fontFamily = 'system-ui, -apple-system, sans-serif';
     document.body.style.transition = 'background-color 0.2s ease';
-  }, [theme]);
+  }, [currentThemeColors]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-  
+
   const onPieceDrop = ({
     sourceSquare,
     targetSquare,
@@ -107,22 +149,7 @@ const App = () => {
   };
 
   const chessboardOptions = {
-      onPieceDrop,
-      onSquareRightClick,
-      arrows,
-      id: 'chessboard-options',
-      position: chessPosition,
-      arrowOptions: {
-        color: 'yellow',
-        secondaryColor: 'red',
-        tertiaryColor: 'blue',
-        arrowLengthReducerDenominator: 4,
-        sameTargetArrowLengthReducerDenominator: 2,
-        arrowWidthDenominator: 10,
-        activeArrowWidthMultiplier: 1.5,
-        opacity: 0.5,
-        activeOpacity: 0.6,
-      },
+      // ... existing ...
       boardStyle: {
         width: '50vmin',
         height: '50vmin',
@@ -133,15 +160,14 @@ const App = () => {
         overflow: 'hidden',
       },
       darkSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#444444' : '#777777',
+        backgroundColor: currentThemeColors.darkSquareColor,
         border: 'none',
       },
       lightSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#dddddd' : '#ffffff',
+        backgroundColor: currentThemeColors.lightSquareColor,
         border: 'none',
       },
-      allowDragging: true,
-      showNotation: false,
+      // ... existing ...
     };
 
   return (
@@ -155,8 +181,8 @@ const App = () => {
         justifyContent: 'center',
         gap: '2rem',
         padding: '2rem',
-        backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
-        color: theme === 'dark' ? '#ffffff' : '#000000',
+        backgroundColor: currentThemeColors.pageBackgroundColor,
+        color: currentThemeColors.pageForegroundColor,
         transition: 'all 0.2s ease',
         position: 'relative',
         boxSizing: 'border-box'
@@ -312,6 +338,94 @@ const App = () => {
           </button>
         </div>
 
+      {/* Settings button */}
+      <button
+        onClick={() => setShowSettings(!showSettings)}
+        data-testid="settingsButton"
+        title="Settings"
+        style={{
+          position: 'absolute',
+          top: '1.5rem',
+          right: '4.5rem', // To the right of theme button
+          background: theme === 'dark' ? '#222222' : '#ffffff',
+          border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+          borderRadius: '8px',
+          padding: '12px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          color: theme === 'dark' ? '#ffffff' : '#000000',
+          transition: 'all 0.2s ease',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
+            : '0 6px 16px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)';
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21.5 12c0-.28-.03-.55-.08-.82l1.98-1.98a.5.5 0 0 0-.15-.68l-1.41-.7a11.02 11.02 0 0 0-1.65-2.86l-.7-1.41a.5.5 0 0 0-.68-.15L15.82 4.08c-.27-.05-.54-.08-.82-.08s-.55.03-.82.08L12.18 2.1a.5.5 0 0 0-.68.15l-.7 1.41a11.02 11.02 0 0 0-2.86 1.65l-1.41.7a.5.5 0 0 0-.15.68l1.98 1.98c-.05.27-.08.54-.08.82s.03.55.08.82l-1.98 1.98a.5.5 0 0 0 .15.68l1.41.7a11.02 11.02 0 0 0 1.65 2.86l.7 1.41a.5.5 0 0 0 .68.15l1.98-1.98c.27.05.54.08.82.08s.55-.03.82-.08l1.98 1.98a.5.5 0 0 0 .68-.15l.7-1.41a11.02 11.02 0 0 0 2.86-1.65l1.41-.7a.5.5 0 0 0 .15-.68L21.42 12.82c.05-.27.08-.54.08-.82z" fill="currentColor" />
+        </svg>
+      </button>
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '60px',
+            right: '20px',
+            backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+            border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: theme === 'dark' 
+              ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+              : '0 4px 12px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000,
+            minWidth: '300px',
+          }}
+        >
+          <h3 style={{ marginBottom: '15px', color: theme === 'dark' ? '#ffffff' : '#000000' }}>
+            {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Settings
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {Object.entries(currentThemeColors).map(([key, value]) => {
+              const configName = key.replace('Color', '-color').replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '');
+              return (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ color: theme === 'dark' ? '#ffffff' : '#000000', flex: 1 }}>
+                    {configName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </label>
+                  <input
+                    type="color"
+                    value={value}
+                    onChange={(e) => {
+                      const newColors = { ...currentThemeColors, [key]: e.target.value };
+                      if (theme === 'dark') {
+                        setDarkThemeColors(newColors);
+                      } else {
+                        setLightThemeColors(newColors);
+                      }
+                    }}
+                    data-testid={`${theme}-theme-${configName}`}
+                    style={{ marginLeft: '10px' }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
         {/* Move history */}
         <div 
           data-testid="movehistory"
