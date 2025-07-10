@@ -12,6 +12,11 @@
     "docker:dev": "docker run --network=host -v .:/app -it chess npm exec vite dev --host",
     "lint": "eslint .",
     "preview": "vite preview",
+    "zip": "./zip_project.sh",
+    "zip:init": "npm run zip -- preedit.zip",
+    "zip:beetle": "npm run zip -- postedit_beetle.zip",
+    "zip:sonnet": "npm run zip -- postedit_sonnet.zip",
+    "zip:rewrite": "npm run zip -- rewrite.zip",
     "preinstall": "node -e \"if (!process.env.npm_execpath?.includes('pnpm')) { console.error('🚫 Use pnpm. Run: pnpm install'); process.exit(1) }\""
   },
   "dependencies": {
