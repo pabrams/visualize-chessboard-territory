@@ -64,7 +64,6 @@ const App = () => {
   // Load colors from localStorage
   useEffect(() => {
     const savedColors = localStorage.getItem('colors');
-    console.log("savedColors", savedColors);
     if (savedColors) {
       setColors(JSON.parse(savedColors));
     }
@@ -72,7 +71,6 @@ const App = () => {
 
   // Save colors to localStorage
   useEffect(() => {
-    console.log("setting colors to ", JSON.stringify(colors));
     localStorage.setItem('colors', JSON.stringify(colors));
   }, [colors]);
 
@@ -121,6 +119,7 @@ const App = () => {
         to: targetSquare,
         promotion: 'q'
       });
+      console.log("setting chess position to " + chessGame.fen());
       setChessPosition(chessGame.fen());
       setMoveHistory(chessGame.history());
       // Clear arrows and reset last clicked after move
