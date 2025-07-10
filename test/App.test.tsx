@@ -377,4 +377,65 @@ describe('Board Position Tests', () => {
     expect(moveHistoryElement).toBeInTheDocument();
   });
 
+  it('adds move to history when white makes e4 from starting position', () => {
+    render(<App />);
+
+    moveToSimulate = {
+      sourceSquare: 'e2',
+      targetSquare: 'e4',
+      piece: { pieceType: 'pawn', isSparePiece: false },
+    };
+
+    const chessboard = screen.getByTestId('chessboard');
+    fireEvent.click(chessboard);
+
+    const moveHistoryElement = screen.getByTestId('movehistory');
+    // Updated to expect '..' for black's turn
+    expect(moveHistoryElement).toHaveTextContent('1. e4 ..');
+  });
+
+
+
+  // New tests for navigation
+  it('navigates back and forth through moves', () => {
+    render(<App />);
+
+    // Make moves: e2-e4, d7-d5
+    moveToSimulate = { sourceSquare: 'e2', targetSquare: 'e4', piece: { pieceType: 'pawn', isSparePiece: false } };
+    fireEvent.click(screen.getByTestId('chessboard'));
+    moveToSimulate = { sourceSquare: 'd7', targetSquare: 'd5', piece: { pieceType: 'pawn', isSparePiece: false } };
+    fireEvent.click(screen.getByTestId('chessboard'));
+
+    // Go back one move
+    fireEvent.click(screen.getByText('<<'));
+
+    // Should be back to after e4, history shows '1. e4 ..'
+    const moveHistoryElement = screen.getByTestId('movehistory');
+    expect(moveHistoryElement).toHaveTextContent('1. e4 ..');
+
+    // Go forward
+    fireEvent.click(screen.getByText('>>'));
+
+    // Back to '1. e4 d5'
+    expect(moveHistoryElement).toHaveTextContent('1. e4 d5');
+  });
+
+  it('prevents moves when not at end of history', () => {
+    render(<App />);
+
+    // Make a move
+    moveToSimulate = { sourceSquare: 'e2', targetSquare: 'e4', piece: { pieceType: 'pawn', isSparePiece: false } };
+    fireEvent.click(screen.getByTestId('chessboard'));
+
+    // Go back
+    fireEvent.click(screen.getByText('<<'));
+
+    // Try to make another move - should fail
+    moveToSimulate = { sourceSquare: 'd2', targetSquare: 'd4', piece: { pieceType: 'pawn', isSparePiece: false } };
+    fireEvent.click(screen.getByTestId('chessboard'));
+
+    // Position should not have changed (still after e4, but since we went back, it's at start)
+    const chessboard = screen.getByTestId('chessboard');
+    expect(chessboard).toHaveAttribute('data-position', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  });
 });
