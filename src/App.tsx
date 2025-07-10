@@ -223,17 +223,17 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
   };
 
   // Create custom square styles for highlighting last move
-  const getCustomSquareStyles = () => {
-    const styles: { [square: string]: React.CSSProperties } = {};
+  // const getCustomSquareStyles = () => {
+  //   const styles: { [square: string]: React.CSSProperties } = {};
     
-    if (lastMove) {
-      const highlightColor = theme === 'dark' ? 'rgba(255, 255, 0, 0.4)' : 'rgba(255, 215, 0, 0.6)';
-      styles[lastMove.from] = { backgroundColor: highlightColor };
-      styles[lastMove.to] = { backgroundColor: highlightColor };
-    }
+  //   if (lastMove) {
+  //     const highlightColor = theme === 'dark' ? 'rgba(255, 255, 0, 0.4)' : 'rgba(255, 215, 0, 0.6)';
+  //     styles[lastMove.from] = { backgroundColor: highlightColor };
+  //     styles[lastMove.to] = { backgroundColor: highlightColor };
+  //   }
     
-    return styles;
-  };
+  //   return styles;
+  // };
 
   const chessboardOptions = {
       onPieceDrop,
@@ -241,7 +241,7 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
       arrows,
       id: 'chessboard-options',
       position: chessPosition,
-      customSquareStyles: getCustomSquareStyles(),
+      // customSquareStyles: getCustomSquareStyles(),
       arrowOptions: {
         color: 'yellow',
         secondaryColor: 'red',
@@ -269,6 +269,11 @@ const [theme, setTheme] = useState<'dark' | 'light'>(() => {
       lightSquareStyle: {
         backgroundColor: currentThemeColors.lightSquareColor,
         border: 'none',
+      },
+      
+      squareStyles: {
+        ...(sourceSquare ? { [sourceSquare]: { backgroundColor: 'rgba(255, 255, 0, 0.4)' } } : {}),
+        ...(targetSquare ? { [targetSquare]: { backgroundColor: 'rgba(255, 255, 0, 0.4)' } } : {}),
       },
     };
 
