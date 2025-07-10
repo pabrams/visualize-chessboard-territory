@@ -81,8 +81,15 @@ ZIPFILE="$STAGE.zip"
 if [[ ! -f $TASK_FILE ]]; then
   echo '{"task_number": 1}' > "$TASK_FILE"
 fi
+
 TASK_NUM=$(jq -r '.task_number' "$TASK_FILE")
-BRANCH_BASE="$STAGE-$TASK_NUM"
+BRANCH_BASE_NAME=$(jq -r '.branch_base_name // empty' "$TASK_FILE")
+
+if [[ -n "$BRANCH_BASE_NAME" ]]; then
+  BRANCH_BASE="${BRANCH_BASE_NAME}-${TASK_NUM}-${STAGE}"
+else
+  BRANCH_BASE="${STAGE}-${TASK_NUM}"
+fi
 
 # Timer control based on stage
 if [[ "$STAGE" == "preedit" ]]; then
