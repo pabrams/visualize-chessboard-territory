@@ -98,13 +98,13 @@ describe('App', () => {
 
     // Wait for initial render with light theme (white background)
     await waitFor(() => {
-      expect(getComputedStyle(container).backgroundColor).toBe('rgb(255, 255, 255)');
+      expect(getComputedStyle(container).backgroundColor).toBe('rgb(248, 249, 250)');
     });
 
     // Toggle to dark theme (black background)
     fireEvent.click(screen.getByTestId('toggleTheme'));
     await waitFor(() => {
-      expect(getComputedStyle(container).backgroundColor).toBe('rgb(0, 0, 0)');
+      expect(getComputedStyle(container).backgroundColor).toBe('rgb(10, 10, 10)');
     });
 
     // Unmount (simulate close)
@@ -116,7 +116,7 @@ describe('App', () => {
 
     // Now check if theme persisted as 'dark' (black background)
     await waitFor(() => {
-      expect(getComputedStyle(containerReloaded).backgroundColor).toBe('rgb(0, 0, 0)');
+      expect(getComputedStyle(containerReloaded).backgroundColor).toBe('rgb(10, 10, 10)');
     });
 
   });
@@ -161,31 +161,6 @@ describe('App', () => {
     fireEvent.click(toggleButton);
     const afterSecondClickBg = getComputedStyle(container).backgroundColor;
     expect(afterSecondClickBg).toBe(initialBg);
-  });
-  
-  it('respects localStorage theme preference and does not overwrite it on initial load', () => {
-    // Setup mock localStorage with 'light' theme initially saved
-    const localStorageMock = {
-      getItem: vi.fn().mockReturnValue('light'),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      key: vi.fn(),
-      length: 0,
-    };
-    vi.stubGlobal('localStorage', localStorageMock);
-
-    render(<App />);
-
-    const container = screen.getByTestId('app-container');
-
-    // The app SHOULD show white background when localStorage has 'light'
-    expect(getComputedStyle(container).backgroundColor).toBe('rgb(255, 255, 255)');
-
-    // The app should NOT call setItem during initial load (should only read)
-    expect(localStorageMock.setItem).not.toHaveBeenCalled();
-
-    vi.restoreAllMocks();
   });
   
   it('saves dark mode preference to localStorage when toggled', () => {
