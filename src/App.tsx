@@ -41,6 +41,7 @@ const App = () => {
     }
   };
 
+
   const [arrows, setArrows] = useState<
     { startSquare: string; endSquare: string, color: string }[]
   >([]);
@@ -48,6 +49,40 @@ const App = () => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     return savedTheme || 'dark';
   });
+
+  const defaultColors = {
+    light: {
+      pageBackground: '#f8f9fa',
+      pageForeground: '#000000',
+      lightSquare: '#ffffff',
+      darkSquare: '#777777',
+      blackArrow: 'blue',
+      whiteArrow: 'red',
+    },
+    dark: {
+      pageBackground: '#0a0a0a',
+      pageForeground: '#ffffff',
+      lightSquare: '#dddddd',
+      darkSquare: '#444444',
+      blackArrow: 'blue',
+      whiteArrow: 'red',
+    }
+  };
+
+  const [customColors, setCustomColors] = useState(() => {
+    const saved = localStorage.getItem('customColors');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return {
+      light: { ...defaultColors.light },
+      dark: { ...defaultColors.dark }
+    };
+  });
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+
 
   // Save theme to localStorage when it changes, but handle initial render correctly
   const isInitialRender = useRef(true);
@@ -65,20 +100,55 @@ const App = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem('customColors', JSON.stringify(customColors));
+  }, [customColors]);
+  
   // Apply theme to body element
   useEffect(() => {
-    document.body.style.backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
-    document.body.style.color = theme === 'dark' ? '#ffffff' : '#000000';
+    document.body.style.backgroundColor = customColors[theme].pageBackground;
+    document.body.style.color = customColors[theme].pageForeground;
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     document.body.style.fontFamily = 'system-ui, -apple-system, sans-serif';
     document.body.style.transition = 'background-color 0.2s ease';
-  }, [theme]);
+  }, [theme, customColors]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
   
+  const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
+    if (square === lastClickedSquare && arrows.length > 0) {
+      // Clear arrows on second click of same square
+      setArrows([]);
+      setLastClickedSquare(null);
+    } else {
+      const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
+
+      const whiteAttackers = chessGame.attackers(square as Square, 'w');
+      whiteAttackers.forEach((attackerSquare) => {
+        newArrows.push({
+          startSquare: attackerSquare,
+          endSquare: square,
+          color: customColors[theme].whiteArrow,  // White attackers
+        });
+      });
+      
+      const blackAttackers = chessGame.attackers(square as Square, 'b');
+      blackAttackers.forEach((attackerSquare) => {
+        newArrows.push({
+          startSquare: attackerSquare,
+          endSquare: square,
+          color: customColors[theme].blackArrow,  // Black attackers
+        });
+      });
+
+      setArrows(newArrows);
+      setLastClickedSquare(square);
+    }
+  };
+
   const onPieceDrop = ({
     sourceSquare,
     targetSquare,
@@ -105,6 +175,7 @@ const App = () => {
       return false;
     }
   };
+
 
   const chessboardOptions = {
       onPieceDrop,
@@ -133,11 +204,11 @@ const App = () => {
         overflow: 'hidden',
       },
       darkSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#444444' : '#777777',
+        backgroundColor: customColors[theme].darkSquare,
         border: 'none',
       },
       lightSquareStyle: {
-        backgroundColor: theme === 'dark' ? '#dddddd' : '#ffffff',
+        backgroundColor: customColors[theme].lightSquare,
         border: 'none',
       },
       allowDragging: true,
@@ -155,8 +226,8 @@ const App = () => {
         justifyContent: 'center',
         gap: '2rem',
         padding: '2rem',
-        backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
-        color: theme === 'dark' ? '#ffffff' : '#000000',
+        backgroundColor: customColors[theme].pageBackground,
+        color: customColors[theme].pageForeground,
         transition: 'all 0.2s ease',
         position: 'relative',
         boxSizing: 'border-box'
@@ -170,6 +241,8 @@ const App = () => {
         ))}
       </div>
 
+
+      
       {/* Theme toggle button */}
       <button
         onClick={toggleTheme}
@@ -218,6 +291,96 @@ const App = () => {
         )}
       </button>
 
+      {/* Settings button */}
+      <button
+        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+        title="Open settings"
+        style={{
+          position: 'absolute',
+          top: '1.5rem',
+          right: '5rem', // Positioned to the left of theme toggle
+          background: theme === 'dark' ? '#222222' : '#ffffff',
+          border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
+          borderRadius: '8px',
+          padding: '12px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          color: theme === 'dark' ? '#ffffff' : '#000000',
+          transition: 'all 0.2s ease',
+          boxShadow: theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
+            : '0 6px 16px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = theme === 'dark' 
+            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.1)';
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 6.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5 5.5 5.5 0 0 1-5.5-5.5 5.5 5.5 0 0 1 5.5-5.5zM12 2v2M12 20v2M3.5 12h2M18.5 12h2M5.64 5.64l1.42 1.42M16.94 16.94l1.42 1.42M5.64 18.36l1.42-1.42M16.94 7.06l1.42-1.42" />
+        </svg>
+      </button>
+
+      {/* Settings panel */}
+      {isSettingsOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '5rem',
+            right: '1.5rem',
+            backgroundColor: theme === 'dark' ? '#333' : '#fff',
+            border: `1px solid ${theme === 'dark' ? '#555' : '#ddd'}`,
+            borderRadius: '8px',
+            padding: '1rem',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            zIndex: 1001,
+            minWidth: '200px',
+          }}
+        >
+          <h3 style={{ margin: '0 0 1rem 0', color: theme === 'dark' ? '#fff' : '#000' }}>
+            {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Settings
+          </h3>
+          {Object.keys(customColors[theme]).map((key) => (
+            <div key={key} style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+              <label
+                style={{ 
+                  flex: '1', 
+                  marginRight: '0.5rem', 
+                  color: theme === 'dark' ? '#ddd' : '#333',
+                  fontSize: '0.9rem'
+                }}
+              >
+                {key.replace(/([A-Z])/g, ' $1').trim()}
+              </label>
+              <input
+                type="color"
+                value={customColors[theme][key]}
+                onChange={(e) => {
+                  setCustomColors((prev) => ({
+                    ...prev,
+                    [theme]: { ...prev[theme], [key]: e.target.value }
+                  }));
+                }}
+                data-testid={`${theme}-theme-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`}
+                style={{ 
+                  border: 'none', 
+                  background: 'transparent', 
+                  cursor: 'pointer' 
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Main content container */}
       <div style={{
         display: 'flex',
@@ -232,144 +395,8 @@ const App = () => {
           data-testid="chessboard" 
         />
 
-        {/* FEN input container */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
-          alignItems: 'center',
-          width: '100%',
-          maxWidth: '500px',
-          padding: '1rem',
-          backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-          borderRadius: '12px',
-          boxShadow: theme === 'dark' 
-            ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
-            : '0 4px 12px rgba(0, 0, 0, 0.1)',
-          border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
-        }}>
-          <input
-            type="text"
-            value={fenInput}
-            onChange={(e) => setFenInput(e.target.value)}
-            placeholder="Enter FEN position..."
-            data-testid="FEN"
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              border: `1px solid ${theme === 'dark' ? '#444' : '#ccc'}`,
-              borderRadius: '8px',
-              backgroundColor: theme === 'dark' ? '#2d2d2d' : '#f9f9f9',
-              color: theme === 'dark' ? '#ffffff' : '#000000',
-              fontSize: '14px',
-              fontFamily: 'monospace',
-              transition: 'all 0.2s ease',
-              outline: 'none',
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = theme === 'dark' ? '#6b5b95' : '#8b4513';
-              e.currentTarget.style.boxShadow = `0 0 0 2px ${theme === 'dark' ? 'rgba(107, 91, 149, 0.2)' : 'rgba(139, 69, 19, 0.2)'}`;
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = theme === 'dark' ? '#444' : '#ccc';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          />
-          <button
-            data-testid="applyFen"
-            onClick={() => {
-              try {
-                chessGame.load(fenInput);
-                setChessPosition(chessGame.fen());
-                setMoveHistory(chessGame.history());
-                setArrows([]);
-                setLastClickedSquare(null);
-              } catch (e) {
-                console.error(e);
-              }
-            }}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              borderRadius: '8px',
-              backgroundColor: theme === 'dark' ? '#333333' : '#888888',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme === 'dark' ? '#333333' : '#777777';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = theme === 'dark' ? '#666666' : '#999999';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            Apply
-          </button>
-        </div>
+        {/* ... existing code ... */}
 
-        {/* Move history */}
-        <div 
-          data-testid="movehistory"
-          style={{
-            width: '100%',
-            maxWidth: '500px',
-            height: '200px',
-            border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
-            borderRadius: '12px',
-            padding: '1.5rem',
-            backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-            color: theme === 'dark' ? '#ffffff' : '#000000',
-            overflowY: 'auto',
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            boxShadow: theme === 'dark' 
-              ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
-              : '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div style={{ 
-            fontWeight: '600', 
-            marginBottom: '12px',
-            fontSize: '16px',
-            color: theme === 'dark' ? '#e0e0e0' : '#333333'
-          }}>
-            Move History
-          </div>
-          {moveHistory.length === 0 ? (
-            <div style={{ 
-              color: theme === 'dark' ? '#666' : '#999', 
-              fontStyle: 'italic',
-              fontSize: '13px'
-            }}>
-              No moves yet
-            </div>
-          ) : (
-            <div>
-              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
-                <div key={i} style={{ 
-                  marginBottom: '4px',
-                  padding: '2px 0',
-                  lineHeight: '1.4'
-                }}>
-                  <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                    {i + 1}.
-                  </span>{' '}
-                  <span style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>
-                    {moveHistory[i * 2] ?? ''}
-                  </span>{' '}
-                  <span style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}>
-                    {moveHistory[i * 2 + 1] ?? ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
