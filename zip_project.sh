@@ -85,11 +85,11 @@ fi
 TASK_NUM=$(jq -r '.task_number' "$TASK_FILE")
 BRANCH_BASE_NAME=$(jq -r '.branch_base_name // empty' "$TASK_FILE")
 
-if [[ -z "$BRANCH_BASE_NAME" ]]; then
-  BRANCH_BASE_NAME="$STAGE"
+if [[ -n "$BRANCH_BASE_NAME" ]]; then
+  BRANCH_BASE="${BRANCH_BASE_NAME}-${TASK_NUM}-${STAGE}"
+else
+  BRANCH_BASE="${STAGE}-${TASK_NUM}"
 fi
-
-BRANCH_BASE="${BRANCH_BASE_NAME}-${TASK_NUM}"
 
 # Timer control based on stage
 if [[ "$STAGE" == "preedit" ]]; then
