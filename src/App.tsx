@@ -665,50 +665,54 @@ const App = () => {
                 const blackMoveIndex = i * 2 + 1;
 
                 return (
-                  <div key={i} style={{ marginBottom: '4px', padding: '2px 0', lineHeight: '1.4' }}>
-                    <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px', padding: '2px 0' }}>
+                    <div style={{ width: '40px', textAlign: 'right', color: theme === 'dark' ? '#888' : '#666' }}>
                       {i + 1}.
-                    </span>{' '}
-                    {whiteMove ? (
-                      <span
-                        style={{
-                          color: theme === 'dark' ? '#ffffff' : '#000000',
-                          backgroundColor: currentMoveIndex === whiteMoveIndex
-                            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
-                            : 'transparent',
-                          padding: '1px 3px',
-                          borderRadius: '3px'
-                        }}
-                      >
-                        {whiteMove}
-                      </span>
-                    ) : (
-                      currentMoveIndex === whiteMoveIndex && (
-                        <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                          ..
+                    </div>
+                    <div style={{ width: '80px', textAlign: 'left' }}>
+                      {whiteMove ? (
+                        <span
+                          style={{
+                            color: theme === 'dark' ? '#ffffff' : '#000000',
+                            backgroundColor: currentMoveIndex === whiteMoveIndex
+                              ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                              : 'transparent',
+                            padding: '1px 3px',
+                            borderRadius: '3px'
+                          }}
+                        >
+                          {whiteMove}
                         </span>
-                      )
-                    )}{' '}
-                    {blackMove ? (
-                      <span
-                        style={{
-                          color: theme === 'dark' ? '#ffffff' : '#000000',
-                          backgroundColor: currentMoveIndex === blackMoveIndex
-                            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
-                            : 'transparent',
-                          padding: '1px 3px',
-                          borderRadius: '3px'
-                        }}
-                      >
-                        {blackMove}
-                      </span>
-                    ) : (
-                      currentMoveIndex === blackMoveIndex && (
-                        <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                          ..
+                      ) : (
+                        currentMoveIndex === whiteMoveIndex && (
+                          <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                            ..
+                          </span>
+                        )
+                      )}
+                    </div>
+                    <div style={{ width: '80px', textAlign: 'left' }}>
+                      {blackMove ? (
+                        <span
+                          style={{
+                            color: theme === 'dark' ? '#ffffff' : '#000000',
+                            backgroundColor: currentMoveIndex === blackMoveIndex
+                              ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                              : 'transparent',
+                            padding: '1px 3px',
+                            borderRadius: '3px'
+                          }}
+                        >
+                          {blackMove}
                         </span>
-                      )
-                    )}
+                      ) : (
+                        currentMoveIndex === blackMoveIndex && (
+                          <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
+                            ..
+                          </span>
+                        )
+                      )}
+                    </div>
                   </div>
                 );
               })}
