@@ -1,0 +1,15 @@
+Currently, the app doesn't let the user make a move unless the move history is advanced to the final position. This means that sub-variations are not supported; we currently only allow a "main variation" which is just a list of all moves, grouped in White-black pairs (White and Black take turns making moves until the end of the game) and numbered, incrementing the move number only after Black's moves. So in fact, each player's "move" is really a "half-move", depending on context. Anyway, to implement sub-variations you need to re-enable the ability to make a move on the chessboard, from any position in the move history, not just the final one.  The main variation is displayed in tabular format, white moves in one column, black in the other.  To display any variation other than the main one, we will add a row to the move history table that spans all columns, indent it a couple of spaces, and list all of the moves in the sub-variation one after another without line breaks, but wrapping naturally to the width of the container. This row should come after the point in the main variation where the main-variation move was played.  For example, if we make the moves 1. e4 e5, 2. c4 f6, and then we back up two moves in the move history, and instead of playing 2.c4, White plays 2.d4, and from that position black plays d5, and then white plays c3, then the rows of the move history should look like this:
+1. e4 e5
+2. c4 
+     (2. d4 d5 3. c3)
+3. .. f6
+
+Nested sub-variations are possible, and there is no limit. For each sub-variation, simply open a new round bracket inline, and keep going - no need to add another row (but keep wrapping naturally).
+
+So let's say in our previous example, in the sub-variation, instead of playing 2. ..d5 Black plays 2. ..c5. THen the new move history would look like this:
+1. e4 e5
+2. c4 
+     (2. d4 d5 (2. ..c5) 3. c3)
+3. .. f6
+
+The behaviour of the forward/back buttons is to always stay on the highest-level 'nesting' whenever possible. For example, if the move 2.c4 is selected in the move history (and the board is at the corresponding position), and the user clicks the forward button, then we should move to 3. ..f6 in both the history and on the board. In order to enter an existing sub-variation, the user will have to click on that move in the move history, or move to that position in the move history and then make the same move on the chessboard manually. This means that if the board is at a position, you must check every move to see if it already exists as the start of a sub-variation, in which case that's the point in the move history that should be highlighted when the user "repeats" that move. You'll have to implement that. When a user clicks any move anywhere in the move history, the board position should update to show the correct position.
