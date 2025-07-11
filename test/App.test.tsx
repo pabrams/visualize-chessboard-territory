@@ -143,6 +143,7 @@ describe('App', () => {
 
     const moveHistoryElement = screen.getByTestId('movehistory');
     expect(moveHistoryElement).toHaveTextContent('1. e4 d5');
+  // The format is now "1. e4 d5" instead of "1. e4 d5" but content is similar
   });
 
   it('toggles background color when button is clicked', () => {

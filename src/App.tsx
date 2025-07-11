@@ -16,6 +16,63 @@ const App = () => {
   });
   const [showSettings, setShowSettings] = useState(false);
 
+  const [branches, setBranches] = useState<{ [key: number]: { moves: string[]; branches?: { [key: number]: any } } }>({});
+  const [currentPath, setCurrentPath] = useState<number[]>([]);
+
+  const loadPosition = () => {
+    const tempGame = new Chess();
+    if (currentPath.length === 0) {
+      for (let i = 0; i <= currentMoveIndex; i++) {
+        if (i < moveHistory.length) {
+          tempGame.move(moveHistory[i]);
+        }
+      }
+    } else {
+      // Replay main line to branch point
+      for (let i = 0; i < currentPath[0]; i++) {
+        if (i < moveHistory.length) {
+          tempGame.move(moveHistory[i]);
+        }
+      }
+      // Replay the branch path
+      let currentBr = branches;
+      for (let p = 0; p < currentPath.length - 1; p++) {
+        const idx = currentPath[p];
+        for (let j = 0; j <= currentPath[p + 1]; j++) {
+          if (j < currentBr[idx]?.moves?.length) {
+            tempGame.move(currentBr[idx].moves[j]);
+          }
+        }
+        currentBr = currentBr[idx]?.branches || {};
+      }
+      // Last level
+      const lastIdx = currentPath[currentPath.length - 1];
+      for (let j = 0; j <= lastIdx; j++) {
+        if (j < currentBr[currentPath[currentPath.length - 2]]?.moves?.length) {
+          tempGame.move(currentBr[currentPath[currentPath.length - 2]].moves[j]);
+        }
+      }
+    }
+    setChessPosition(tempGame.fen());
+    setArrows([]);
+    setLastClickedSquare(null);
+  };
+
+  // Helper to build sub-variation string
+  const buildSubVariation = (branch: any, startNum: number) => {
+    let str = `${startNum}. `;
+    branch.moves.forEach((move: string, j: number) => {
+      str += `${move} `;
+      if (branch.branches && branch.branches[j + 1]) {
+        str += `(${buildSubVariation(branch.branches[j + 1], startNum + Math.floor(j / 2) + 1)}) `;
+      }
+      if (j % 2 === 1 && j < branch.moves.length - 1) {
+        str += `${startNum + Math.floor((j + 1) / 2) + 1}. `;
+      }
+    });
+    return str.trim();
+  };
+  
   const [lightThemeColors, setLightThemeColors] = useState({
     pageBackgroundColor: '#f8f9fa',
     pageForegroundColor: '#000000',
@@ -84,17 +141,42 @@ const App = () => {
     setLastClickedSquare(null);
   };
 
+  // Updated navigation functions to handle variations
   const goForward = () => {
-    if (currentMoveIndex >= moveHistory.length - 1) return;
-    const newIndex = currentMoveIndex + 1;
-    const tempGame = new Chess();
-    for (let i = 0; i <= newIndex; i++) {
-      tempGame.move(moveHistory[i]);
+    if (currentPath.length === 0) {
+      if (currentMoveIndex >= moveHistory.length - 1) return;
+      const newIndex = currentMoveIndex + 1;
+      const tempGame = new Chess();
+      for (let i = 0; i <= newIndex; i++) {
+        tempGame.move(moveHistory[i]);
+      }
+      setChessPosition(tempGame.fen());
+      setCurrentMoveIndex(newIndex);
+      setArrows([]);
+      setLastClickedSquare(null);      
+    } else {
+      // In branch, try to go forward in current branch or exit to main
+      const currentBranches = getCurrentBranches(currentPath.slice(0, -1), branches);
+      const currentBranchIndex = currentPath[currentPath.length - 1];
+      if (currentBranchIndex < currentBranches[currentPath[currentPath.length - 2]]?.moves?.length - 1) {
+        setCurrentPath([...currentPath.slice(0, -1), currentBranchIndex + 1]);
+      } else {
+        // Exit branch to main line
+        const branchPoint = currentPath[0];
+        setCurrentPath([]);
+        setCurrentMoveIndex(branchPoint);
+      }
     }
-    setChessPosition(tempGame.fen());
-    setCurrentMoveIndex(newIndex);
-    setArrows([]);
-    setLastClickedSquare(null);
+    loadPosition();
+  };
+
+  // Helper function
+  const getCurrentBranches = (path: number[], br: any) => {
+    let cb = br;
+    for (let p of path) {
+      cb = cb[p]?.branches || {};
+    }
+    return cb;
   };
 
   const goBackward = () => {
@@ -112,17 +194,17 @@ const App = () => {
       setArrows([]);
       setLastClickedSquare(null);
     }
+    loadPosition();
   };
 
-  // Check if we're at the final position
-  const isAtFinalPosition = currentMoveIndex === moveHistory.length - 1 || moveHistory.length === 0;
+
 
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
     if (square === lastClickedSquare && arrows.length > 0) {
       // Clear arrows on second click of same square
       setArrows([]);
-      setLastClickedSquare(null);
+      setLastClickedSquare(null);   
     } else {
       const newArrows: { startSquare: string; endSquare: string; color: string }[] = [];
 
@@ -188,34 +270,75 @@ const App = () => {
     targetSquare,
     piece
   }: PieceDropHandlerArgs) => {
-    // Prevent moves if not at final position
-    if (!isAtFinalPosition) {
-      return false;
-    }
+    // Check if we're at the final position
+    const isAtFinalPosition = currentMoveIndex === moveHistory.length - 1 && currentPath.length === 0;
 
-    if (!targetSquare) {
-      return false;
+    if (isAtFinalPosition) {
+      if (!targetSquare) {
+        return false;
+      }
+      let move;
+      try {
+        move = chessGame.move({
+          from: sourceSquare, 
+          to: targetSquare,
+          promotion: 'q'
+        });
+        setChessPosition(chessGame.fen());
+        const newHistory = chessGame.history();
+        setMoveHistory(newHistory);
+        setCurrentMoveIndex(newHistory.length - 1);
+        // Clear arrows and reset last clicked after move
+        setArrows([]);
+        setLastClickedSquare(null);
+        return true; 
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    } else {
+      // Creating or extending a branch
+      let branchIndex;
+      let currentBranches = branches;
+      if (currentPath.length > 0) {
+        // Navigate to the current branches level
+        for (let p = 0; p < currentPath.length - 1; p++) {
+          currentBranches = currentBranches[currentPath[p]]?.branches || {};
+        }
+        branchIndex = currentPath[currentPath.length - 1] + 1;
+      } else {
+        branchIndex = currentMoveIndex + 1;
+      }
+
+      if (!currentBranches[branchIndex]) {
+        currentBranches[branchIndex] = { moves: [] };
+      }
+
+      const move = chessGame.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+      if (move) {
+        currentBranches[branchIndex].moves.push(move.san);
+        setChessPosition(chessGame.fen());
+        
+        // Update branches state
+        setBranches(prev => {
+          const newBranches = JSON.parse(JSON.stringify(prev));
+          // Update the nested structure - this is simplified, in production use a library like immer
+          return newBranches;
+        });
+
+        // Update current path
+        if (currentPath.length === 0) {
+          setCurrentPath([branchIndex, 0]);
+        } else {
+          setCurrentPath([...currentPath.slice(0, -1), branchIndex, currentBranches[branchIndex].moves.length - 1]);
+        }
+
+        setArrows([]);
+        setLastClickedSquare(null);
+        return true;
+      }
     }
-    let move;
-    try {
-      move = chessGame.move({
-        from: sourceSquare, 
-        to: targetSquare,
-        promotion: 'q'
-      });
-      setChessPosition(chessGame.fen());
-      const newHistory = chessGame.history();
-      setMoveHistory(newHistory);
-      setCurrentMoveIndex(newHistory.length - 1);
-      // Clear arrows and reset last clicked after move
-      setArrows([]);
-      setLastClickedSquare(null);
-      return true; 
-    } catch (e) {
-      console.error(e);
-      return false;
-    }
-  };
+  }
 
   const lastMove = getLastMove();
   console.log("lastMove", lastMove);
@@ -657,63 +780,61 @@ const App = () => {
               No moves yet
             </div>
           ) : (
-            <div>
-              {Array.from({ length: Math.ceil(moveHistory.length / 2) + (moveHistory.length % 2 === 0 ? 1 : 0) }).map((_, i) => {
-                const whiteMove = moveHistory[i * 2];
-                const blackMove = moveHistory[i * 2 + 1];
-                const whiteMoveIndex = i * 2;
-                const blackMoveIndex = i * 2 + 1;
-
+            <div>              
+              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => {
+                const moveNum = i + 1;
+                const whiteIndex = i * 2;
+                const blackIndex = whiteIndex + 1;
+                const whiteMove = moveHistory[whiteIndex];
+                const blackMove = moveHistory[blackIndex] || '..';
+                
+                const isWhiteHighlighted = currentPath.length === 0 && currentMoveIndex === whiteIndex;
+                const isBlackHighlighted = currentPath.length === 0 && currentMoveIndex === blackIndex;
+                
+                let subVariation = '';
+                if (branches[whiteIndex + 1]) {
+                  subVariation = buildSubVariation(branches[whiteIndex + 1], moveNum + 1);
+                }
+                
                 return (
                   <div key={i} style={{ marginBottom: '4px', padding: '2px 0', lineHeight: '1.4' }}>
                     <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                      {i + 1}.
+                      {moveNum}.
                     </span>{' '}
-                    {whiteMove ? (
-                      <span
-                        style={{
-                          color: theme === 'dark' ? '#ffffff' : '#000000',
-                          backgroundColor: currentMoveIndex === whiteMoveIndex
-                            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
-                            : 'transparent',
-                          padding: '1px 3px',
-                          borderRadius: '3px'
-                        }}
-                      >
-                        {whiteMove}
-                      </span>
-                    ) : (
-                      currentMoveIndex === whiteMoveIndex && (
-                        <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                          ..
-                        </span>
-                      )
-                    )}{' '}
-                    {blackMove ? (
-                      <span
-                        style={{
-                          color: theme === 'dark' ? '#ffffff' : '#000000',
-                          backgroundColor: currentMoveIndex === blackMoveIndex
-                            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
-                            : 'transparent',
-                          padding: '1px 3px',
-                          borderRadius: '3px'
-                        }}
-                      >
-                        {blackMove}
-                      </span>
-                    ) : (
-                      currentMoveIndex === blackMoveIndex && (
-                        <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                          ..
-                        </span>
-                      )
+                    <span
+                      style={{
+                        color: theme === 'dark' ? '#ffffff' : '#000000',
+                        backgroundColor: isWhiteHighlighted
+                          ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                          : 'transparent',
+                        padding: '1px 3px',
+                        borderRadius: '3px'
+                      }}
+                    >
+                      {whiteMove || (currentMoveIndex === whiteIndex ? '..' : '')}
+                    </span>{' '}
+                    <span
+                      style={{
+                        color: theme === 'dark' ? '#ffffff' : '#000000',
+                        backgroundColor: isBlackHighlighted
+                          ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                          : 'transparent',
+                        padding: '1px 3px',
+                        borderRadius: '3px'
+                      }}
+                    >
+                      {blackMove}
+                    </span>
+                    {subVariation && (
+                      <div style={{ marginLeft: '20px', fontSize: 'smaller' }}>
+                        ({subVariation})
+                      </div>
                     )}
                   </div>
                 );
               })}
             </div>
-
+            
           )}
         </div>
       </div>
