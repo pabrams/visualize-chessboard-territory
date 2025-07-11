@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs} from 'react-chessboard';
 import { Chess, Square } from 'chess.js';
 
+interface Variation {
+  startIndex: number;
+  moves: string[];
+  subVariations: Variation[];
+}
+
 const App = () => {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
@@ -15,6 +21,8 @@ const App = () => {
     return savedTheme || 'dark';
   });
   const [showSettings, setShowSettings] = useState(false);
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [currentPath, setCurrentPath] = useState<number[]>([]);
 
   const [lightThemeColors, setLightThemeColors] = useState({
     pageBackgroundColor: '#f8f9fa',
@@ -34,7 +42,53 @@ const App = () => {
     blackArrowColor: '#0000ff'
   });
 
+  const getCurrentMoves = (): string[] => {
+    const moves: string[] = [];
+    if (currentPath.length === 0) {
+      return moveHistory.slice(0, currentMoveIndex + 1);
+    } else {
+      const firstVar = variations[currentPath[0]];
+      moves.push(...moveHistory.slice(0, firstVar.startIndex + 1));
+      let currVariations = variations;
+      for (let i = 0; i < currentPath.length; i++) {
+        const varIndex = currentPath[i];
+        const vari = currVariations[varIndex];
+        let upTo: number;
+        if (i < currentPath.length - 1) {
+          upTo = vari.subVariations[currentPath[i + 1]].startIndex;
+        } else {
+          upTo = currentMoveIndex + 1;
+        }
+        moves.push(...vari.moves.slice(0, upTo));
+        currVariations = vari.subVariations;
+      }
+      return moves;
+    }
+  };
+
+  const getCurrentFEN = (): string => {
+    const moves = getCurrentMoves();
+    const temp = new Chess();
+    moves.forEach(m => temp.move(m));
+    return temp.fen();
+  };
+
+  const getCurrentLevelMovesLength = (): number => {
+    if (currentPath.length === 0) return moveHistory.length;
+    let curr = variations;
+    for (let i of currentPath.slice(0, -1)) curr = curr[i].subVariations;
+    return curr[currentPath[currentPath.length - 1]].moves.length;
+  };
+
   const currentThemeColors = theme === 'dark' ? darkThemeColors : lightThemeColors;
+
+  // position sync
+  useEffect(() => {
+    const fen = getCurrentFEN();
+    setChessPosition(fen);
+    chessGameRef.current.load(fen);
+  }, [currentMoveIndex, currentPath, moveHistory, variations]);
+
 
   // Load from localStorage
   useEffect(() => {
@@ -55,20 +109,17 @@ const App = () => {
   }, [lightThemeColors, darkThemeColors]);
 
   const getLastMove = () => {
-    if (currentMoveIndex >= 0 && moveHistory.length > 0) {
-      const tempGame = new Chess();
-      for (let i = 0; i <= currentMoveIndex; i++) {
-        tempGame.move(moveHistory[i]);
-      }
-      const history = tempGame.history({ verbose: true });
-      return history[history.length - 1];
-    }
-    return null;
+    if (currentMoveIndex < 0) return null;
+    const currentMoves = getCurrentMoves();
+    if (currentMoves.length === 0) return null;
+    const temp = new Chess();
+    currentMoves.forEach(m => temp.move(m));
+    const history = temp.history({ verbose: true });
+    return history[history.length - 1] || null;
   };
 
   const goToStart = () => {
-    const tempGame = new Chess();
-    setChessPosition(tempGame.fen());
+    setCurrentPath([]);
     setCurrentMoveIndex(-1);
     setArrows([]);
     setLastClickedSquare(null);
@@ -76,46 +127,57 @@ const App = () => {
 
   const goToEnd = () => {
     if (moveHistory.length === 0) return;
-    const tempGame = new Chess();
-    moveHistory.forEach(move => tempGame.move(move));
-    setChessPosition(tempGame.fen());
-    setCurrentMoveIndex(moveHistory.length - 1);
+    if (currentPath.length === 0) {
+      setCurrentMoveIndex(moveHistory.length - 1);
+    } else {
+      const movesLength = getCurrentLevelMovesLength();
+      setCurrentMoveIndex(movesLength - 1);
+    }
     setArrows([]);
     setLastClickedSquare(null);
   };
 
   const goForward = () => {
-    if (currentMoveIndex >= moveHistory.length - 1) return;
-    const newIndex = currentMoveIndex + 1;
-    const tempGame = new Chess();
-    for (let i = 0; i <= newIndex; i++) {
-      tempGame.move(moveHistory[i]);
+    const isOnMain = currentPath.length === 0;
+    if (isOnMain) {
+      if (currentMoveIndex < moveHistory.length - 1) {
+        setCurrentMoveIndex(currentMoveIndex + 1);
+      }
+    } else {
+      // Switch to main and forward
+      setCurrentPath([]);
+      const firstVarStart = variations[currentPath[0]]?.startIndex || 0;
+      setCurrentMoveIndex(firstVarStart);
+      if (currentMoveIndex < moveHistory.length - 1) {
+        setCurrentMoveIndex(currentMoveIndex + 1);
+      }
     }
-    setChessPosition(tempGame.fen());
-    setCurrentMoveIndex(newIndex);
     setArrows([]);
     setLastClickedSquare(null);
   };
 
   const goBackward = () => {
-    if (currentMoveIndex < 0) return;
-    const newIndex = currentMoveIndex - 1;
-    if (newIndex < 0) {
-      goToStart();
-    } else {
-      const tempGame = new Chess();
-      for (let i = 0; i <= newIndex; i++) {
-        tempGame.move(moveHistory[i]);
+    const isOnMain = currentPath.length === 0;
+    if (isOnMain) {
+      if (currentMoveIndex > -1) {
+        setCurrentMoveIndex(currentMoveIndex - 1);
       }
-      setChessPosition(tempGame.fen());
-      setCurrentMoveIndex(newIndex);
-      setArrows([]);
-      setLastClickedSquare(null);
+    } else {
+      setCurrentPath([]);
+      const firstVarStart = variations[currentPath[0]]?.startIndex || 0;
+      setCurrentMoveIndex(firstVarStart);
+      if (currentMoveIndex > 0) {
+        setCurrentMoveIndex(currentMoveIndex - 1);
+      }
     }
+    if (currentMoveIndex < 0) {
+      goToStart();
+    }
+    setArrows([]);
+    setLastClickedSquare(null);
   };
 
-  // Check if we're at the final position
-  const isAtFinalPosition = currentMoveIndex === moveHistory.length - 1 || moveHistory.length === 0;
+  const isAtFinalPosition = currentMoveIndex === (currentPath.length === 0 ? moveHistory.length - 1 : getCurrentLevelMovesLength() - 1);
 
 
   const onSquareRightClick = ({ square, piece }: SquareHandlerArgs) => {
@@ -182,39 +244,163 @@ const App = () => {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+  
+  const onPieceDrop = ({ sourceSquare, targetSquare, piece }: PieceDropHandlerArgs) => {
+    if (!targetSquare) return false;
 
-  const onPieceDrop = ({
-    sourceSquare,
-    targetSquare,
-    piece
-  }: PieceDropHandlerArgs) => {
-    // Prevent moves if not at final position
-    if (!isAtFinalPosition) {
-      return false;
-    }
-
-    if (!targetSquare) {
-      return false;
-    }
     let move;
     try {
-      move = chessGame.move({
-        from: sourceSquare, 
-        to: targetSquare,
-        promotion: 'q'
-      });
+      move = chessGame.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+      const moveStr = move.san;
+
+      // Get current level details
+      const currentLevelMoves = currentPath.length === 0 ? moveHistory : (() => {
+        let curr = variations;
+        for (let i of currentPath.slice(0, -1)) curr = curr[i].subVariations;
+        return curr[currentPath[currentPath.length - 1]].moves;
+      })();
+      
+      const atEnd = currentMoveIndex === currentLevelMoves.length - 1;
+      
+      // Check if this is the next expected move in current path
+      if (!atEnd) {
+        const nextExpected = currentLevelMoves[currentMoveIndex + 1];
+        if (nextExpected === moveStr) {
+          setCurrentMoveIndex(currentMoveIndex + 1);
+          setChessPosition(chessGame.fen());
+          const newHistory = chessGame.history();
+          setMoveHistory(newHistory);
+          setCurrentMoveIndex(newHistory.length - 1);
+          setArrows([]);
+          setLastClickedSquare(null);
+          return true;
+        }
+      }
+
+      // Get current sub-variations
+      let currentSubVariations: Variation[];
+      if (currentPath.length === 0) {
+        currentSubVariations = variations;
+      } else {
+        let curr = variations;
+        for (let i of currentPath) curr = curr[i].subVariations;
+        currentSubVariations = curr;
+      }
+
+      // Check for existing sub-variation starting with this move
+      const matchingSub = currentSubVariations.findIndex(v => 
+        v.startIndex === currentMoveIndex + 1 && v.moves[0] === moveStr
+      );
+
+      if (matchingSub !== -1) {
+        setCurrentPath([...currentPath, matchingSub]);
+        setCurrentMoveIndex(0);
+        setChessPosition(chessGame.fen());
+        const newHistory = chessGame.history();
+        setMoveHistory(newHistory);
+        setCurrentMoveIndex(newHistory.length - 1);
+        setArrows([]);
+        setLastClickedSquare(null);
+        return true;
+      }
+
+      // If at end, append to current path
+      if (atEnd) {
+        if (currentPath.length === 0) {
+          setMoveHistory([...moveHistory, moveStr]);
+        } else {
+          let newVariations = [...variations];
+          let curr = newVariations;
+          for (let i of currentPath.slice(0, -1)) curr = curr[i].subVariations;
+          const lastVar = curr[currentPath[currentPath.length - 1]];
+          lastVar.moves = [...lastVar.moves, moveStr];
+          setVariations(newVariations);
+        }
+        setCurrentMoveIndex(currentMoveIndex + 1);
+      } else {
+        // Create new sub-variation
+        const newVar: Variation = {
+          startIndex: currentMoveIndex + 1,
+          moves: [moveStr],
+          subVariations: []
+        };
+        currentSubVariations.push(newVar);
+        setVariations([...variations]);
+        const newIndex = currentSubVariations.length - 1;
+        setCurrentPath([...currentPath, newIndex]);
+        setCurrentMoveIndex(0);
+      }
+
       setChessPosition(chessGame.fen());
       const newHistory = chessGame.history();
       setMoveHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
-      // Clear arrows and reset last clicked after move
       setArrows([]);
       setLastClickedSquare(null);
-      return true; 
+      return true;
     } catch (e) {
       console.error(e);
       return false;
     }
+  };
+
+  // Add renderVariation function (can be a const or in JSX)
+  const renderVariation = (v: Variation, basePair: number, basePath: number[]) => {
+    let variationString = '';
+    let currentPair = basePair;
+
+    // Build the moves string
+    if (v.moves.length > 0) {
+      variationString = `${currentPair}. ${v.moves[0]}`;
+      for (let j = 1; j < v.moves.length; j++) {
+        if (j % 2 === 1) {
+          variationString += ` ${v.moves[j]}`;
+        } else {
+          currentPair++;
+          variationString += ` ${currentPair}. ${v.moves[j]}`;
+        }
+      }
+    }
+
+    // Add sub-variations
+    v.subVariations.forEach((sub, subIndex) => {
+      const subStartIndexInString = /* calculate position based on sub.startIndex */;
+      // For simplicity, append at the end or find the position
+      // But for now, append at the end
+      variationString += ` (${renderSubVariation(sub, currentPair + Math.floor(sub.startIndex / 2), [...basePath, subIndex])})`;
+    });
+
+    // Make it clickable with highlighting
+    const parts = variationString.split(' ').map((part, index) => {
+      // Parse if it's a move or number
+      const isMove = !part.includes('.') && part !== '..';
+      if (isMove) {
+        const moveIndex = /* calculate which move */;
+        const isCurrent = /* check if this is the current position */;
+        return (
+          <span
+            key={index}
+            style={{
+              backgroundColor: isCurrent ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)') : 'transparent',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              setCurrentPath(basePath);
+              setCurrentMoveIndex(moveIndex);
+            }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+
+    return <span>{parts}</span>;
+  };
+  const renderSubVariation = (sub: Variation, subPair: number, path: number[]) => {
+    // Similar logic to renderVariation but for sub
+    // ...
   };
 
   const lastMove = getLastMove();
@@ -570,83 +756,85 @@ const App = () => {
           ) : (
             <div style={{ display: 'table', width: '100%' }}>
               {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => {
-                const whiteMove = moveHistory[i * 2];
-                const blackMove = moveHistory[i * 2 + 1];
                 const whiteMoveIndex = i * 2;
                 const blackMoveIndex = i * 2 + 1;
+                const whiteMove = moveHistory[whiteMoveIndex];
+                const blackMove = moveHistory[blackMoveIndex];
+
+                // Calculate if current
+                const isCurrentWhite = currentPath.length === 0 && currentMoveIndex === whiteMoveIndex;
+                const isCurrentBlack = currentPath.length === 0 && currentMoveIndex === blackMoveIndex;
 
                 return (
-                  <div key={i} style={{ 
-                    display: 'table-row',
-                    marginBottom: '4px', 
-                    lineHeight: '1.4' 
-                  }}>
-                    {/* Move number column */}
-                    <div style={{ 
-                      display: 'table-cell',
-                      width: '40px',
-                      paddingRight: '12px',
-                      color: theme === 'dark' ? '#888' : '#666',
-                      textAlign: 'right'
-                    }}>
-                      {i + 1}.
-                    </div>
-                    
-                    {/* White move column */}
-                    <div style={{ 
-                      display: 'table-cell',
-                      width: '80px',
-                      paddingRight: '12px'
-                    }}>
-                      {whiteMove ? (
-                        <span
-                          style={{
-                            color: theme === 'dark' ? '#ffffff' : '#000000',
-                            backgroundColor: currentMoveIndex === whiteMoveIndex
-                              ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
-                              : 'transparent',
-                            padding: '1px 3px',
-                            borderRadius: '3px'
-                          }}
-                        >
-                          {whiteMove}
-                        </span>
-                      ) : (
-                        currentMoveIndex === whiteMoveIndex && (
-                          <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                            ..
+                  <React.Fragment key={i}>
+                    <div style={{ display: 'table-row', marginBottom: '4px', lineHeight: '1.4' }}>
+                      <div style={{ display: 'table-cell', width: '40px', paddingRight: '12px', color: theme === 'dark' ? '#888' : '#666', textAlign: 'right' }}>
+                        {i + 1}.
+                      </div>
+                      <div style={{ display: 'table-cell', width: '80px', paddingRight: '12px' }}>
+                        {whiteMove ? (
+                          <span
+                            style={{
+                              color: theme === 'dark' ? '#ffffff' : '#000000',
+                              backgroundColor: isCurrentWhite ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)') : 'transparent',
+                              padding: '1px 3px',
+                              borderRadius: '3px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              setCurrentPath([]);
+                              setCurrentMoveIndex(whiteMoveIndex);
+                            }}
+                          >
+                            {whiteMove}
                           </span>
-                        )
-                      )}
-                    </div>
-                    
-                    {/* Black move column */}
-                    <div style={{ 
-                      display: 'table-cell',
-                      width: '80px'
-                    }}>
-                      {blackMove ? (
-                        <span
-                          style={{
-                            color: theme === 'dark' ? '#ffffff' : '#000000',
-                            backgroundColor: currentMoveIndex === blackMoveIndex
-                              ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
-                              : 'transparent',
-                            padding: '1px 3px',
-                            borderRadius: '3px'
-                          }}
-                        >
-                          {blackMove}
-                        </span>
-                      ) : (
-                        currentMoveIndex === blackMoveIndex && (
-                          <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>
-                            ..
+                        ) : (
+                          isCurrentWhite && (
+                            <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>..</span>
+                          )
+                        )}
+                      </div>
+                      <div style={{ display: 'table-cell', width: '80px' }}>
+                        {blackMove ? (
+                          <span
+                            style={{
+                              color: theme === 'dark' ? '#ffffff' : '#000000',
+                              backgroundColor: isCurrentBlack ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)') : 'transparent',
+                              padding: '1px 3px',
+                              borderRadius: '3px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              setCurrentPath([]);
+                              setCurrentMoveIndex(blackMoveIndex);
+                            }}
+                          >
+                            {blackMove}
                           </span>
-                        )
-                      )}
+                        ) : (
+                          isCurrentBlack && (
+                            <span style={{ color: theme === 'dark' ? '#888' : '#666' }}>..</span>
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Add variations after this pair */}
+                    {(() => {
+                      const afterIndex = blackMove ? 2 * i + 1 : 2 * i;
+                      const varsAt = variations.filter(v => v.startIndex === afterIndex);
+                      if (varsAt.length > 0) {
+                        return varsAt.map((v, varIndex) => (
+                          <div key={`var-${i}-${varIndex}`} style={{ display: 'table-row' }}>
+                            <div style={{ display: 'table-cell', colspan: 3, paddingLeft: '20px' }}>
+                              ( {renderVariation(v, i + 1, [varIndex])} )
+                            </div>
+                          </div>
+                        ));
+                      }
+                      return null;
+                    })()}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -704,6 +892,8 @@ const App = () => {
                 const newHistory = chessGame.history();
                 setMoveHistory(newHistory);
                 setCurrentMoveIndex(newHistory.length - 1);
+                setVariations([]);
+                setCurrentPath([]);
                 setArrows([]);
                 setLastClickedSquare(null);
               } catch (e) {
