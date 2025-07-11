@@ -644,14 +644,6 @@ const App = () => {
               : '0 4px 12px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <div style={{ 
-            fontWeight: '600', 
-            marginBottom: '12px',
-            fontSize: '16px',
-            color: theme === 'dark' ? '#e0e0e0' : '#333333'
-          }}>
-            Move History
-          </div>
           {moveHistory.length === 0 ? (
             <div style={{ color: theme === 'dark' ? '#666' : '#999', fontStyle: 'italic', fontSize: '13px' }}>
               No moves yet

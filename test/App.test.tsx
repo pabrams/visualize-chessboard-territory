@@ -86,7 +86,7 @@ describe('App', () => {
     fireEvent.click(chessboard);
 
     const moveHistoryElement = screen.getByTestId('movehistory');
-    expect(moveHistoryElement).toHaveTextContent('1. e4');
+    expect(moveHistoryElement).toHaveTextContent('1.e4');
   });
 
   test('persists theme across reloads', async () => {
@@ -142,7 +142,7 @@ describe('App', () => {
     fireEvent.click(chessboard);
 
     const moveHistoryElement = screen.getByTestId('movehistory');
-    expect(moveHistoryElement).toHaveTextContent('1. e4 d5');
+    expect(moveHistoryElement).toHaveTextContent('1.e4d5');
   });
 
   it('toggles background color when button is clicked', () => {
