@@ -18,6 +18,8 @@
     "zip:sonnet": "pnpm run zip -- sonnet_postedit",
     "zip:rewrite": "pnpm run zip -- rewrite",
     "time": "./zip_project.sh --timer status",
+    "begin": "./zip_project.sh --timer start",
+    "reset": "./zip_project.sh --timer reset",
     "preinstall": "node -e \"if (!process.env.npm_execpath?.includes('pnpm')) { console.error('🚫 Use pnpm. Run: pnpm install'); process.exit(1) }\""
   },
   "dependencies": {

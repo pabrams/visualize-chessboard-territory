@@ -72,7 +72,7 @@ if [[ "$1" == "--timer" ]]; then
     resume) start_timer ;;
     status) show_timer_status ;;
     reset) reset_timer ;;
-    *) echo "Usage: $0 --timer [pause|resume|status]"; exit 1 ;;
+    *) echo "Usage: $0 --timer [pause|resume|status|reset]"; exit 1 ;;
   esac
   exit 0
 fi
