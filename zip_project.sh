@@ -5,8 +5,8 @@ set -e
 # Configuration
 TIMER_FILE=".zip_timer_state"
 TASK_FILE=".task_state.json"
-REPO_OWNER="your-github-username"
-REPO_NAME="your-repo-name"
+REPO_OWNER="codemonkeyfromspace"
+REPO_NAME="visualize-chessboard-territory"
 
 # Helper: pretty format time
 format_time() {
@@ -90,11 +90,11 @@ if [[ -n "$BRANCH_BASE_NAME" ]]; then
 else
   BRANCH_BASE="${STAGE}-${TASK_NUM}"
 fi
-
 # Timer control based on stage
-if [[ "$STAGE" == "preedit" ]]; then
+if [[ "$STAGE" == "start" ]]; then
   echo "Starting timer..."
   start_timer
+  exit 0
 elif [[ "$STAGE" == "rewrite" ]]; then
   echo "Checking timer..."
   if [[ ! -f $TIMER_FILE || $(jq -r '.running' $TIMER_FILE) != "true" ]]; then
@@ -104,7 +104,7 @@ elif [[ "$STAGE" == "rewrite" ]]; then
 else
   # Other stages: must be running
   if [[ ! -f $TIMER_FILE || $(jq -r '.running' $TIMER_FILE) != "true" ]]; then
-    echo "❌ Timer is not running. Run preedit or resume it."
+    echo "❌ Timer is not running. Run 'start' or resume it."
     exit 1
   fi
 fi
