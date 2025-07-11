@@ -658,35 +658,18 @@ const App = () => {
             </div>
           ) : (
             <div style={{ display: 'table', width: '100%' }}>
-              {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => {
+              {Array.from({ length: Math.ceil(moveHistory.length / 2) + (moveHistory.length % 2 === 0 ? 1 : 0) }).map((_, i) => {
                 const whiteMove = moveHistory[i * 2];
                 const blackMove = moveHistory[i * 2 + 1];
                 const whiteMoveIndex = i * 2;
                 const blackMoveIndex = i * 2 + 1;
 
                 return (
-                  <div key={i} style={{ 
-                    display: 'table-row',
-                    marginBottom: '4px', 
-                    lineHeight: '1.4' 
-                  }}>
-                    {/* Move number column */}
-                    <div style={{ 
-                      display: 'table-cell',
-                      width: '40px',
-                      paddingRight: '12px',
-                      color: theme === 'dark' ? '#888' : '#666',
-                      textAlign: 'right'
-                    }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px', padding: '2px 0' }}>
+                    <div style={{ width: '40px', textAlign: 'right', color: theme === 'dark' ? '#888' : '#666' }}>
                       {i + 1}.
                     </div>
-                    
-                    {/* White move column */}
-                    <div style={{ 
-                      display: 'table-cell',
-                      width: '80px',
-                      paddingRight: '12px'
-                    }}>
+                    <div style={{ width: '80px', textAlign: 'left' }}>
                       {whiteMove ? (
                         <span
                           style={{
@@ -708,12 +691,7 @@ const App = () => {
                         )
                       )}
                     </div>
-                    
-                    {/* Black move column */}
-                    <div style={{ 
-                      display: 'table-cell',
-                      width: '80px'
-                    }}>
+                    <div style={{ width: '80px', textAlign: 'left' }}>
                       {blackMove ? (
                         <span
                           style={{
@@ -738,7 +716,7 @@ const App = () => {
                   </div>
                 );
               })}
-            </div>
+              </div>
           )}
         </div>
       </div>
