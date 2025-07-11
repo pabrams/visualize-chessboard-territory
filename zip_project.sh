@@ -40,6 +40,11 @@ pause_timer() {
   echo "⏸️  Timer paused."
 }
 
+reset_timer() {
+  rm -f "$TIMER_FILE"
+  echo "⏹️  Timer reset."
+}
+
 get_total_minutes() {
   if [[ ! -f $TIMER_FILE ]]; then echo 0; return; fi
   local accumulated=$(jq -r '.accumulated' $TIMER_FILE)
@@ -66,6 +71,7 @@ if [[ "$1" == "--timer" ]]; then
     pause) pause_timer ;;
     resume) start_timer ;;
     status) show_timer_status ;;
+    reset) reset_timer ;;
     *) echo "Usage: $0 --timer [pause|resume|status]"; exit 1 ;;
   esac
   exit 0
