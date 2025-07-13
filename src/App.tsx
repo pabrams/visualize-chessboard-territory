@@ -125,6 +125,8 @@ const App = () => {
           theme={theme.theme}
           currentMoveIndex={chessGame.currentMoveIndex}
           moveHistoryLength={chessGame.moveHistory.length}
+          isAtStart={chessGame.isAtStart}
+          isAtEnd={chessGame.isAtEnd}
           goToStart={() => handleNavigationAction(chessGame.goToStart)}
           goBackward={() => handleNavigationAction(chessGame.goBackward)}
           goForward={() => handleNavigationAction(chessGame.goForward)}
@@ -136,6 +138,9 @@ const App = () => {
           theme={theme.theme}
           moveHistory={chessGame.moveHistory}
           currentMoveIndex={chessGame.currentMoveIndex}
+          moveTree={chessGame.moveTree}
+          currentNode={chessGame.currentNode}
+          onNavigateToNode={chessGame.navigateToNode}
         />
         
         {/* FEN input container */}

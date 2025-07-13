@@ -4,6 +4,8 @@ interface NavigationControlsProps {
   theme: 'dark' | 'light';
   currentMoveIndex: number;
   moveHistoryLength: number;
+  isAtStart: boolean;
+  isAtEnd: boolean;
   goToStart: () => void;
   goBackward: () => void;
   goForward: () => void;
@@ -14,13 +16,13 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
   theme,
   currentMoveIndex,
   moveHistoryLength,
+  isAtStart,
+  isAtEnd,
   goToStart,
   goBackward,
   goForward,
   goToEnd,
 }) => {
-  const isAtStart = currentMoveIndex < 0;
-  const isAtEnd = currentMoveIndex >= moveHistoryLength - 1;
 
   const getButtonStyle = (disabled: boolean) => ({
     padding: '8px 12px',
