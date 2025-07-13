@@ -28,7 +28,10 @@ describe('useTheme', () => {
   });
 
   it('should initialize with saved theme from localStorage', () => {
-    localStorageMock.getItem.mockReturnValue('light');
+    localStorageMock.getItem.mockImplementation((key) => {
+      if (key === 'theme') return 'light';
+      return null; // Return null for other keys like 'lightThemeColors' and 'darkThemeColors'
+    });
     
     const { result } = renderHook(() => useTheme());
     
