@@ -369,11 +369,6 @@ describe('Board Position Tests', () => {
     
     fireEvent.change(fenInput, { target: { value: fenAfterE4E5 } });
     fireEvent.click(applyButton);
-    
-    // Note: This test depends on how your App handles FEN input and move history
-    // If the FEN input resets the game to that position without preserving history,
-    // the move history might be empty or show "No moves yet"
-    // Adjust the expectation based on your implementation
     expect(moveHistoryElement).toBeInTheDocument();
   });
 
