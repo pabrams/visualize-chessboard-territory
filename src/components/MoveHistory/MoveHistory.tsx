@@ -47,13 +47,17 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
         </span>
       );
     } else {
-      // Black move - show move number with ellipsis if it starts a variation
-      // or if the previous move in the variation was not the white move of the same number
-      const isFirstInVariation = !node.parent || 
+      // Black move - show move number with ellipsis in these cases:
+      // 1. It's the first move of the game (no parent)
+      // 2. The parent is a white move from a different move number (jumped moves)
+      // 3. The parent is also a black move (variation starts with black)
+      // 4. This is the first move in a variation line
+      const shouldShowMoveNumber = !node.parent || 
         (node.parent.isWhiteMove && node.parent.moveNumber !== node.moveNumber) ||
-        (!node.parent.isWhiteMove);
+        (!node.parent.isWhiteMove) ||
+        (node.parent && node.parent.variations.includes(node));
       
-      if (isFirstInVariation) {
+      if (shouldShowMoveNumber) {
         elements.push(
           <span key={`move-number-${node.move}`} style={{ marginRight: '4px' }}>
             {node.moveNumber}...
@@ -70,12 +74,21 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
         style={{
           cursor: 'pointer',
           backgroundColor: currentNode === node
-            ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+            ? 'rgba(255, 255, 0, 0.4)'
             : 'transparent',
           padding: '1px 3px',
           borderRadius: '3px',
-          textDecoration: 'underline',
           marginRight: '4px'
+        }}
+        onMouseEnter={(e) => {
+          if (currentNode !== node) {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (currentNode !== node) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }
         }}
       >
         {node.san}
@@ -132,15 +145,14 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
             style={{
               cursor: 'pointer',
               backgroundColor: currentNode === whiteNode
-                ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                ? 'rgba(255, 255, 0, 0.4)'
                 : 'transparent',
               padding: '1px 3px',
-              borderRadius: '3px',
-              textDecoration: 'underline'
+              borderRadius: '3px'
             }}
             onMouseEnter={(e) => {
               if (currentNode !== whiteNode) {
-                e.currentTarget.style.backgroundColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
               }
             }}
             onMouseLeave={(e) => {
@@ -170,15 +182,14 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
               style={{
                 cursor: 'pointer',
                 backgroundColor: currentNode === blackNode
-                  ? (theme === 'dark' ? 'rgba(255, 255, 0, 0.3)' : 'rgba(255, 215, 0, 0.4)')
+                  ? 'rgba(255, 255, 0, 0.4)'
                   : 'transparent',
                 padding: '1px 3px',
-                borderRadius: '3px',
-                textDecoration: 'underline'
+                borderRadius: '3px'
               }}
               onMouseEnter={(e) => {
                 if (currentNode !== blackNode) {
-                  e.currentTarget.style.backgroundColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
                 }
               }}
               onMouseLeave={(e) => {
