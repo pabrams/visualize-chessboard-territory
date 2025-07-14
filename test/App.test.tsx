@@ -307,7 +307,7 @@ describe('Board Position Tests', () => {
     expect(chessboard).toHaveAttribute('data-position', customFen);
   });
 
-  it('updates chess position when FEN is input and applied', () => {
+  it('updates chess position when FEN is input and applied', async () => {
     render(<App />);
     
     // Get the FEN input field and apply button
@@ -331,7 +331,9 @@ describe('Board Position Tests', () => {
     fireEvent.click(applyButton);
     
     // Verify that the chessboard position has been updated to the new FEN
-    expect(chessboard).toHaveAttribute('data-position', testFen);
+    await waitFor(() => {
+      expect(chessboard).toHaveAttribute('data-position', testFen);
+    });
   });
 
   it('handles invalid FEN input gracefully', () => {

@@ -7,7 +7,7 @@ describe('useChessGame', () => {
     const { result } = renderHook(() => useChessGame());
     
     expect(result.current.chessPosition).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    expect(result.current.moveHistory).toEqual([]);
+    expect(result.current.moveTree).toEqual([]);
     expect(result.current.currentMoveIndex).toBe(-1);
     expect(result.current.isAtFinalPosition).toBe(true);
   });
@@ -20,7 +20,7 @@ describe('useChessGame', () => {
       expect(success).toBe(true);
     });
     
-    expect(result.current.moveHistory).toEqual(['e4']);
+    expect(result.current.moveTree).toEqual([{ san: 'e4', children: [] }]);
     expect(result.current.currentMoveIndex).toBe(0);
     expect(result.current.chessPosition).toBe('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1');
   });
@@ -33,7 +33,7 @@ describe('useChessGame', () => {
       expect(success).toBe(false);
     });
     
-    expect(result.current.moveHistory).toEqual([]);
+    expect(result.current.moveTree).toEqual([]);
     expect(result.current.currentMoveIndex).toBe(-1);
   });
 

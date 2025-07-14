@@ -124,7 +124,7 @@ const App = () => {
         <NavigationControls
           theme={theme.theme}
           currentMoveIndex={chessGame.currentMoveIndex}
-          moveHistoryLength={chessGame.moveHistory.length}
+          moveHistoryLength={chessGame.moveHistoryLength}
           goToStart={() => handleNavigationAction(chessGame.goToStart)}
           goBackward={() => handleNavigationAction(chessGame.goBackward)}
           goForward={() => handleNavigationAction(chessGame.goForward)}
@@ -134,8 +134,9 @@ const App = () => {
         {/* Move history */}
         <MoveHistory
           theme={theme.theme}
-          moveHistory={chessGame.moveHistory}
-          currentMoveIndex={chessGame.currentMoveIndex}
+          moveTree={chessGame.moveTree}
+          currentPath={chessGame.currentPath}
+          onNavigate={chessGame.setCurrentPath}
         />
         
         {/* FEN input container */}

@@ -30,11 +30,6 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   onMoveComplete,
 }) => {
   const handlePieceDrop = (args: PieceDropHandlerArgs) => {
-    // Prevent moves if not at final position
-    if (!isAtFinalPosition) {
-      return false;
-    }
-
     const success = onPieceDrop(args);
     if (success) {
       onMoveComplete();
