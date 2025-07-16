@@ -35,6 +35,11 @@ const App = () => {
     return chessGame.makeMove(sourceSquare, targetSquare);
   };
 
+  const handleMoveClick = (nodeId: string) => {
+    chessGame.navigateToMove(nodeId);
+    arrows.clearArrows();
+  };
+
   const handleMoveComplete = () => {
     arrows.clearArrows();
   };
@@ -123,8 +128,10 @@ const App = () => {
         {/* Navigation buttons */}
         <NavigationControls
           theme={theme.theme}
-          currentMoveIndex={chessGame.currentMoveIndex}
-          moveHistoryLength={chessGame.moveHistory.length}
+          isAtStart={chessGame.isAtStart}
+          canGoBackward={chessGame.canGoBackward}
+          canGoForward={chessGame.canGoForward}
+          isAtFinalPosition={chessGame.isAtFinalPosition}
           goToStart={() => handleNavigationAction(chessGame.goToStart)}
           goBackward={() => handleNavigationAction(chessGame.goBackward)}
           goForward={() => handleNavigationAction(chessGame.goForward)}
@@ -134,8 +141,8 @@ const App = () => {
         {/* Move history */}
         <MoveHistory
           theme={theme.theme}
-          moveHistory={chessGame.moveHistory}
-          currentMoveIndex={chessGame.currentMoveIndex}
+          gameTree={chessGame.gameTree}
+          onMoveClick={handleMoveClick}
         />
         
         {/* FEN input container */}
