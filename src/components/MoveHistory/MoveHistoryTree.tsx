@@ -45,16 +45,26 @@ const MoveDisplay: React.FC<MoveDisplayProps> = ({ theme, node, isCurrentMove, o
   );
 };
 
-// Get bracket style for variation depth
 const getBracketStyle = (depth: number): { open: string; close: string } => {
-  const brackets = [
-    { open: '', close: '' },      // Main line - no brackets
-    { open: '(', close: ')' },    // First level - round brackets
-    { open: '[', close: ']' },    // Second level - square brackets
-    { open: '{', close: '}' },    // Third level - curly brackets
-  ];
+  // Start with round brackets and alternate between round and square
+  // Level 0: no brackets (main line)
+  // Level 1: round brackets ()
+  // Level 2: square brackets []
+  // Level 3: round brackets ()
+  // Level 4: square brackets []
+  // etc.
   
-  return brackets[Math.min(depth, brackets.length - 1)];
+  if (depth === 0) {
+    return { open: '', close: '' };
+  }
+  
+  // For depth 1, 3, 5, ... use round brackets
+  // For depth 2, 4, 6, ... use square brackets
+  const useRoundBrackets = depth % 2 === 1;
+  
+  return useRoundBrackets 
+    ? { open: '(', close: ')' }
+    : { open: '[', close: ']' };
 };
 
 interface VariationDisplayProps {
@@ -116,7 +126,7 @@ const VariationDisplay: React.FC<VariationDisplayProps> = ({
       const variations = getVariationsFromNode(gameTree, currentNode.id);
       const nonMainVariations = variations.filter(v => !v.isMainLine);
       
-      if (nonMainVariations.length > 0 && depth < 3) { // Limit depth to prevent infinite recursion
+      if (nonMainVariations.length > 0) { // Removed depth limit for infinite nesting
         nonMainVariations.forEach((variation, varIndex) => {
           const firstVariationNode = gameTree.nodes[variation.nodeId];
           if (firstVariationNode) {
