@@ -2,10 +2,10 @@ import React from 'react';
 
 interface NavigationControlsProps {
   theme: 'dark' | 'light';
-  currentMoveIndex: number;
-  moveHistoryLength: number;
   isAtStart: boolean;
-  isAtEnd: boolean;
+  canGoBackward: boolean;
+  canGoForward: boolean;
+  isAtFinalPosition: boolean;
   goToStart: () => void;
   goBackward: () => void;
   goForward: () => void;
@@ -14,10 +14,10 @@ interface NavigationControlsProps {
 
 export const NavigationControls: React.FC<NavigationControlsProps> = ({
   theme,
-  currentMoveIndex,
-  moveHistoryLength,
   isAtStart,
-  isAtEnd,
+  canGoBackward,
+  canGoForward,
+  isAtFinalPosition,
   goToStart,
   goBackward,
   goForward,
@@ -63,28 +63,28 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
       </button>
       <button
         onClick={goBackward}
-        disabled={isAtStart}
+        disabled={!canGoBackward}
         data-testid="goBackward"
         title="Previous move"
-        style={getButtonStyle(isAtStart)}
+        style={getButtonStyle(!canGoBackward)}
       >
         ◀
       </button>
       <button
         onClick={goForward}
-        disabled={isAtEnd}
+        disabled={!canGoForward}
         data-testid="goForward"
         title="Next move"
-        style={getButtonStyle(isAtEnd)}
+        style={getButtonStyle(!canGoForward)}
       >
         ▶
       </button>
       <button
         onClick={goToEnd}
-        disabled={isAtEnd}
+        disabled={isAtFinalPosition}
         data-testid="goToEnd"
         title="Go to end"
-        style={getButtonStyle(isAtEnd)}
+        style={getButtonStyle(isAtFinalPosition)}
       >
         ⏭
       </button>
