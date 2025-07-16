@@ -158,16 +158,22 @@ export const useChessGame = () => {
       const tempGame = new Chess();
       tempGame.load(fen);
       
-      // Create a new game tree with the FEN position as root
-      const newTree = createInitialGameTree();
-      newTree.nodes[newTree.rootId].fen = fen;
+      // Update the existing game tree root with the new FEN
+      const updatedTree = { ...gameTree };
+      updatedTree.nodes[updatedTree.rootId].fen = fen;
+      updatedTree.currentNodeId = updatedTree.rootId; // Ensure we're at the root
       
-      setGameTree(newTree);
+      setGameTree(updatedTree);
       chessGameRef.current.load(fen);
+      
+      // Update chess position directly and immediately
       setChessPosition(fen);
+      
+      console.log('Loaded FEN:', fen);
+      console.log('Current FEN from chess ref:', chessGameRef.current.fen());
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('Error loading FEN:', e);
       return false;
     }
   };

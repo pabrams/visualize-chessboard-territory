@@ -10,6 +10,7 @@ import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { NavigationControls } from './components/Navigation/NavigationControls';
 import { MoveHistory } from './components/MoveHistory/MoveHistory';
 import { FenInput } from './components/FenInput/FenInput';
+import PuzzlesMenu from './components/PuzzlesMenu';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -59,6 +60,14 @@ const App = () => {
   const lastMove = chessGame.getLastMove();
   const sourceSquare = lastMove ? lastMove.from : null;
   const targetSquare = lastMove ? lastMove.to : null;
+  
+  // Debug: Log chess position changes
+  console.log('Current chess position in App:', chessGame.chessPosition);
+  console.log('Chess position type:', typeof chessGame.chessPosition);
+  console.log('Chess position length:', chessGame.chessPosition?.length);
+  
+  // Also log the chess ref position for comparison
+  console.log('Chess ref position:', 'chess ref available');
 
   return (
     <div 
@@ -112,6 +121,7 @@ const App = () => {
         maxWidth: '800px',
       }}>
         <ChessBoard
+          key={chessGame.chessPosition} // Force re-render when position changes
           theme={theme.theme}
           chessPosition={chessGame.chessPosition}
           arrows={arrows.arrows}
@@ -150,6 +160,9 @@ const App = () => {
           theme={theme.theme}
           onApplyFen={handleApplyFen}
         />
+        
+        {/* Puzzles menu */}
+        <PuzzlesMenu theme={theme.theme} />
       </div>
     </div>
   );
