@@ -63,3 +63,5 @@ Run this command to enable hot reloading via docker.
 ./build_docker.sh my_app
 docker run --network=host -v .:/app -it my_app npm exec vite dev --host
 ```
+
+<!-- Codebase States initialized: 2025-09-10 14:04:08 -->
