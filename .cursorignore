@@ -1,3 +1,4 @@
 # Ignore codebase switcher script to avoid contaminating AI conversations
 codebase_switcher.py
 dist/
+dist
