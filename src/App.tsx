@@ -10,6 +10,7 @@ import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { NavigationControls } from './components/Navigation/NavigationControls';
 import { MoveHistory } from './components/MoveHistory/MoveHistory';
 import { FenInput } from './components/FenInput/FenInput';
+import Header from './components/Header/Header';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -61,97 +62,100 @@ const App = () => {
   const targetSquare = lastMove ? lastMove.to : null;
 
   return (
-    <div 
-      data-testid="app-container" 
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '2rem',
-        padding: '2rem',
-        backgroundColor: theme.currentThemeColors.pageBackgroundColor,
-        color: theme.currentThemeColors.pageForegroundColor,
-        transition: 'all 0.2s ease',
-        position: 'relative',
-        boxSizing: 'border-box'
-      }}
-    >
-      <div data-testid="arrows-list" style={{ display: 'none' }}>
-        {arrows.arrows.map(({ startSquare, endSquare, color }, i) => (
-          <div key={i}>
-            start: {startSquare}, end: {endSquare}, color: {color}
-          </div>
-        ))}
+    <>
+      <Header />
+      <div 
+        data-testid="app-container" 
+        style={{
+          minHeight: 'calc(100vh - 60px)', // Adjust for header height
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '2rem',
+          padding: '2rem',
+          backgroundColor: theme.currentThemeColors.pageBackgroundColor,
+          color: theme.currentThemeColors.pageForegroundColor,
+          transition: 'all 0.2s ease',
+          position: 'relative',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div data-testid="arrows-list" style={{ display: 'none' }}>
+          {arrows.arrows.map(({ startSquare, endSquare, color }, i) => (
+            <div key={i}>
+              start: {startSquare}, end: {endSquare}, color: {color}
+            </div>
+          ))}
+        </div>
+
+        {/* Theme toggle button */}
+        <ThemeToggle theme={theme.theme} toggleTheme={theme.toggleTheme} />
+
+        {/* Settings button */}
+        <SettingsButton theme={theme.theme} onClick={() => setShowSettings(!showSettings)} />
+
+        {/* Settings panel */}
+        {showSettings && (
+          <SettingsPanel
+            theme={theme.theme}
+            currentThemeColors={theme.currentThemeColors}
+            setLightThemeColors={theme.setLightThemeColors}
+            setDarkThemeColors={theme.setDarkThemeColors}
+          />
+        )}
+
+        {/* Main content container */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2rem',
+          width: '100%',
+          maxWidth: '800px',
+        }}>
+          <ChessBoard
+            theme={theme.theme}
+            chessPosition={chessGame.chessPosition}
+            arrows={arrows.arrows}
+            lightSquareColor={theme.currentThemeColors.lightSquareColor}
+            darkSquareColor={theme.currentThemeColors.darkSquareColor}
+            sourceSquare={sourceSquare}
+            targetSquare={targetSquare}
+            isAtFinalPosition={chessGame.isAtFinalPosition}
+            onPieceDrop={handlePieceDrop}
+            onSquareRightClick={handleSquareRightClick}
+            onMoveComplete={handleMoveComplete}
+          />
+
+          {/* Navigation buttons */}
+          <NavigationControls
+            theme={theme.theme}
+            isAtStart={chessGame.isAtStart}
+            canGoBackward={chessGame.canGoBackward}
+            canGoForward={chessGame.canGoForward}
+            isAtFinalPosition={chessGame.isAtFinalPosition}
+            goToStart={() => handleNavigationAction(chessGame.goToStart)}
+            goBackward={() => handleNavigationAction(chessGame.goBackward)}
+            goForward={() => handleNavigationAction(chessGame.goForward)}
+            goToEnd={() => handleNavigationAction(chessGame.goToEnd)}
+          />
+
+          {/* Move history */}
+          <MoveHistory
+            theme={theme.theme}
+            gameTree={chessGame.gameTree}
+            onMoveClick={handleMoveClick}
+          />
+          
+          {/* FEN input container */}
+          <FenInput
+            theme={theme.theme}
+            onApplyFen={handleApplyFen}
+          />
+        </div>
       </div>
-
-      {/* Theme toggle button */}
-      <ThemeToggle theme={theme.theme} toggleTheme={theme.toggleTheme} />
-
-      {/* Settings button */}
-      <SettingsButton theme={theme.theme} onClick={() => setShowSettings(!showSettings)} />
-
-      {/* Settings panel */}
-      {showSettings && (
-        <SettingsPanel
-          theme={theme.theme}
-          currentThemeColors={theme.currentThemeColors}
-          setLightThemeColors={theme.setLightThemeColors}
-          setDarkThemeColors={theme.setDarkThemeColors}
-        />
-      )}
-
-      {/* Main content container */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '2rem',
-        width: '100%',
-        maxWidth: '800px',
-      }}>
-        <ChessBoard
-          theme={theme.theme}
-          chessPosition={chessGame.chessPosition}
-          arrows={arrows.arrows}
-          lightSquareColor={theme.currentThemeColors.lightSquareColor}
-          darkSquareColor={theme.currentThemeColors.darkSquareColor}
-          sourceSquare={sourceSquare}
-          targetSquare={targetSquare}
-          isAtFinalPosition={chessGame.isAtFinalPosition}
-          onPieceDrop={handlePieceDrop}
-          onSquareRightClick={handleSquareRightClick}
-          onMoveComplete={handleMoveComplete}
-        />
-
-        {/* Navigation buttons */}
-        <NavigationControls
-          theme={theme.theme}
-          isAtStart={chessGame.isAtStart}
-          canGoBackward={chessGame.canGoBackward}
-          canGoForward={chessGame.canGoForward}
-          isAtFinalPosition={chessGame.isAtFinalPosition}
-          goToStart={() => handleNavigationAction(chessGame.goToStart)}
-          goBackward={() => handleNavigationAction(chessGame.goBackward)}
-          goForward={() => handleNavigationAction(chessGame.goForward)}
-          goToEnd={() => handleNavigationAction(chessGame.goToEnd)}
-        />
-
-        {/* Move history */}
-        <MoveHistory
-          theme={theme.theme}
-          gameTree={chessGame.gameTree}
-          onMoveClick={handleMoveClick}
-        />
-        
-        {/* FEN input container */}
-        <FenInput
-          theme={theme.theme}
-          onApplyFen={handleApplyFen}
-        />
-      </div>
-    </div>
+    </>
   );
 };
 
