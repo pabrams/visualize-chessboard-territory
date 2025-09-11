@@ -1,4 +1,5 @@
 import React from 'react';
+import './ThemeToggle.css';
 
 interface ThemeToggleProps {
   theme: 'dark' | 'light';
@@ -6,39 +7,25 @@ interface ThemeToggleProps {
 }
 
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ theme, toggleTheme }) => {
+  const buttonStyle: React.CSSProperties = {
+    '--button-bg-color': theme === 'dark' ? '#222222' : '#ffffff',
+    '--button-border-color': theme === 'dark' ? '#444' : '#eeeeee',
+    '--button-fg-color': theme === 'dark' ? '#ffffff' : '#000000',
+    '--button-box-shadow': theme === 'dark' 
+      ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+      : '0 4px 12px rgba(0, 0, 0, 0.1)',
+    '--button-hover-box-shadow': theme === 'dark'
+      ? '0 6px 16px rgba(0, 0, 0, 0.4)'
+      : '0 6px 16px rgba(0, 0, 0, 0.15)',
+  } as React.CSSProperties;
+
   return (
     <button
       onClick={toggleTheme}
       data-testid="toggleTheme"
       title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-      style={{
-        position: 'absolute',
-        top: '1.5rem',
-        right: '1.5rem',
-        background: theme === 'dark' ? '#222222' : '#ffffff',
-        border: `1px solid ${theme === 'dark' ? '#444' : '#eeeeee'}`,
-        borderRadius: '8px',
-        padding: '12px',
-        cursor: 'pointer',
-        zIndex: 1000,
-        color: theme === 'dark' ? '#ffffff' : '#000000',
-        transition: 'all 0.2s ease',
-        boxShadow: theme === 'dark' 
-          ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
-          : '0 4px 12px rgba(0, 0, 0, 0.1)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.05)';
-        e.currentTarget.style.boxShadow = theme === 'dark' 
-          ? '0 6px 16px rgba(0, 0, 0, 0.4)' 
-          : '0 6px 16px rgba(0, 0, 0, 0.15)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = theme === 'dark' 
-          ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
-          : '0 4px 12px rgba(0, 0, 0, 0.1)';
-      }}
+      className="theme-toggle-button"
+      style={buttonStyle}
     >
       {theme === 'dark' ? (
         // Sun icon
