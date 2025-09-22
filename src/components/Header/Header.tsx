@@ -1,4 +1,3 @@
-import React from 'react';
 import { useLichessAuth } from '../../hooks/useLichessAuth';
 import { login } from '../../services/lichessAuth';
 import UserMenu from '../UserMenu/UserMenu';
