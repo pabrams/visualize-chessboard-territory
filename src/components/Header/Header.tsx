@@ -14,7 +14,9 @@ const Header = () => {
         ) : user ? (
           <UserMenu user={user} onLogout={logout} />
         ) : (
-          <button onClick={login}>Login with Lichess</button>
+          <button onClick={() => {
+            login();
+          }}>Login with Lichess</button>
         )}
       </div>
     </header>

@@ -11,17 +11,27 @@ export const useLichessAuth = () => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const accessToken = await handleRedirect();
-      if (accessToken) {
-        localStorage.setItem('lichessToken', accessToken);
-        setToken(accessToken);
-      } else {
-        const storedToken = localStorage.getItem('lichessToken');
-        if (storedToken) {
-          setToken(storedToken);
+
+      try {
+        const accessToken = await handleRedirect();
+        if (accessToken) {
+          localStorage.setItem('lichessToken', accessToken);
+          setToken(accessToken);
+        } else {
+          const storedToken = localStorage.getItem('lichessToken');
+          if (storedToken) {
+            console.log('Using stored token:', storedToken);
+            setToken(storedToken);
+          } else {
+            console.log('No stored token found');
+          }
         }
+      } catch (error) {
+        console.error('Error in initAuth:', error);
+      } finally {
+        console.log('Setting loading to false');
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
