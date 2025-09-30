@@ -69,9 +69,8 @@ const App = () => {
         style={{
           minHeight: 'calc(100vh - 60px)', // Adjust for header height
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          flexDirection: 'row',
+          alignItems: 'stretch',
           gap: '2rem',
           padding: '2rem',
           backgroundColor: theme.currentThemeColors.pageBackgroundColor,
@@ -105,14 +104,51 @@ const App = () => {
           />
         )}
 
-        {/* Main content container */}
+        {/* Left side - Controls and move history */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
           gap: '2rem',
-          width: '100%',
-          maxWidth: '800px',
+          width: '400px',
+          minWidth: '300px',
+          maxWidth: '500px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}>
+
+          {/* Move history */}
+          <MoveHistory
+            theme={theme.theme}
+            gameTree={chessGame.gameTree}
+            onMoveClick={handleMoveClick}
+          />
+                    {/* Navigation buttons */}
+                    <NavigationControls
+            theme={theme.theme}
+            isAtStart={chessGame.isAtStart}
+            canGoBackward={chessGame.canGoBackward}
+            canGoForward={chessGame.canGoForward}
+            isAtFinalPosition={chessGame.isAtFinalPosition}
+            goToStart={() => handleNavigationAction(chessGame.goToStart)}
+            goBackward={() => handleNavigationAction(chessGame.goBackward)}
+            goForward={() => handleNavigationAction(chessGame.goForward)}
+            goToEnd={() => handleNavigationAction(chessGame.goToEnd)}
+          />
+
+          {/* FEN input container */}
+          <FenInput
+            theme={theme.theme}
+            onApplyFen={handleApplyFen}
+          />
+        </div>
+
+        {/* Right side - Chessboard (as large as possible) */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 0, // Important for flex shrinking
         }}>
           <ChessBoard
             theme={theme.theme}
@@ -126,32 +162,6 @@ const App = () => {
             onPieceDrop={handlePieceDrop}
             onSquareRightClick={handleSquareRightClick}
             onMoveComplete={handleMoveComplete}
-          />
-
-          {/* Navigation buttons */}
-          <NavigationControls
-            theme={theme.theme}
-            isAtStart={chessGame.isAtStart}
-            canGoBackward={chessGame.canGoBackward}
-            canGoForward={chessGame.canGoForward}
-            isAtFinalPosition={chessGame.isAtFinalPosition}
-            goToStart={() => handleNavigationAction(chessGame.goToStart)}
-            goBackward={() => handleNavigationAction(chessGame.goBackward)}
-            goForward={() => handleNavigationAction(chessGame.goForward)}
-            goToEnd={() => handleNavigationAction(chessGame.goToEnd)}
-          />
-
-          {/* Move history */}
-          <MoveHistory
-            theme={theme.theme}
-            gameTree={chessGame.gameTree}
-            onMoveClick={handleMoveClick}
-          />
-          
-          {/* FEN input container */}
-          <FenInput
-            theme={theme.theme}
-            onApplyFen={handleApplyFen}
           />
         </div>
       </div>
