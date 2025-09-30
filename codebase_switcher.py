@@ -5,27 +5,52 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
-# Last update: 2025-09-10 11:15 AM EST
-
 class CodebaseSwitcher:
+
     def __init__(self):
-        self.states = ['preedit', 'gemini', 'opus']
+        self.states = ['preedit', 'gemini', 'sonnet']
         self.current_dir = Path.cwd()
         self.script_files = ['switch.py']
+
+    def add_to_ignore(self, ignore_file, entry, entry_comment):
+
+        try:
+            ignore_path = self.current_dir / ignore_file
+            
+            if ignore_path.exists():
+                existing_content = ignore_path.read_text(encoding='utf-8')
+                if entry not in existing_content.strip().split('\n'):
+                    new_content = existing_content.rstrip() + "\n\n" + entry_comment + "\n" + entry + "\n"
+                    ignore_path.write_text(new_content, encoding='utf-8')
+                    print(f"Updated {ignore_file} to exclude {entry}")
+                else:
+                    print(f"{ignore_file} already excludes {entry}")
+            else:
+                ignore_path.write_text(
+                    entry_comment + "\n" + entry + "\n",
+                    encoding='utf-8'
+                )
+                print(f"Created {ignore_file} to exclude {entry}")
         
+        except (OSError, UnicodeError) as e:
+            print(f"⚠️  Warning: Could not create/update {ignore_file}: {e}")
+
     def run_git_command(self, args, capture_output=False):
         """Run git command with proper cross-platform handling"""
-        try:
-            cmd = ['git'] + (args if isinstance(args, list) else args.split())
-            result = subprocess.run(cmd, capture_output=capture_output, text=True, 
-                                  check=not capture_output, cwd=self.current_dir)
-            return result.stdout.strip() if capture_output and result.returncode == 0 else (True if not capture_output else None)
-        except FileNotFoundError:
-            return False if not capture_output else None
-        except subprocess.CalledProcessError as e:
-            if not capture_output and e.returncode == 128:
-                print(f"❌ Git error: {e.stderr.strip() if e.stderr else 'Repository operation failed'}")
-            return False if not capture_output else None
+
+        cmd = ['git'] + (args if isinstance(args, list) else args.split())
+        result = subprocess.run(cmd, capture_output=capture_output, text=True, 
+                                check=not capture_output, cwd=self.current_dir)
+
+        if capture_output:
+            if result.returncode == 0:
+                return result.stdout.strip()
+            else:
+                print(f"⚠️  Error running git command: {result.stderr.strip()}")
+                return ""
+
+        return result.returncode == 0
+
     
     def check_git_available(self):
         """Check if git is available and print helpful error if not"""
@@ -44,183 +69,90 @@ class CodebaseSwitcher:
     def initialize(self):
         """Initialize git repo with states"""
         if not self.check_git_available():
-            return False
-            
+            raise RuntimeError("Git must be installed and available for this script to run.")
+
+
+
+        self.add_to_ignore('.cursorignore', "codebase_switcher.py", "# Ignore codebase switcher script to avoid contaminating AI conversations\n")
+        self.add_to_ignore('.gitignore', "codebase_switcher.py", "# Ignore codebase switcher script\n")
+        self.add_to_ignore('.gitignore', ".cursorignore", "# Ignore .cursorignore files\n")
+        self.add_to_ignore('.gitignore', ".cursorindexingignore", "# Ignore cursor indexing ignore script\n")
+        self.add_to_ignore('.gitignore', ".specstory/", "# Ignore specstory folders.\n")
+
         if not (self.current_dir / '.git').exists():
             print("🔧 Initializing git repository...")
-            if not self.run_git_command(['init']):
-                return False
-            
-            print("🔧 Setting up local git configuration...")
-            if not self.run_git_command(['config', '--local', 'user.name', 'Codebase Switcher']):
-                print("⚠️  Warning: Could not set local git user.name")
-            if not self.run_git_command(['config', '--local', 'user.email', 'switcher@codebase.local']):
-                print("⚠️  Warning: Could not set local git user.email")
-        
-        # Append timestamp to README.md every time init is run
-        try:
-            readme_path = self.current_dir / 'README.md'
-            timestamp_line = f"\n\n<!-- Codebase States initialized: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} -->\n"
-            
-            if readme_path.exists():
-                # Always append timestamp to existing README
-                existing_content = readme_path.read_text(encoding='utf-8')
-                readme_path.write_text(existing_content + timestamp_line, encoding='utf-8')
-                print("📝 Appended timestamp to existing README.md")
-            else:
-                # Create new README with timestamp
-                readme_path.write_text(
-                    f"# Codebase States\n\nProject Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
-                    encoding='utf-8'
-                )
-                print("📝 Created README.md")
-        except (OSError, UnicodeError) as e:
-            print(f"⚠️  Warning: Could not create/update README.md: {e}")
+            self.run_git_command(['init'])
 
-        # Create/update .cursorignore every time init is run
-        try:
-            cursorignore_path = self.current_dir / '.cursorignore'
-            switcher_entry = "codebase_switcher.py"
+            self.run_git_command(['config', '--local', 'user.name', 'Codebase Switcher'])
+            self.run_git_command(['config', '--local', 'user.email', 'switcher@codebase.local'])
             
-            if cursorignore_path.exists():
-                existing_content = cursorignore_path.read_text(encoding='utf-8')
-                existing_lines = existing_content.strip().split('\n')
-                
-                if switcher_entry not in existing_lines:
-                    new_content = existing_content.rstrip() + "\n\n# Ignore codebase switcher script to avoid contaminating AI conversations\n"
-                    new_content += switcher_entry + "\n"
-                    cursorignore_path.write_text(new_content, encoding='utf-8')
-                    print(f"📝 Updated .cursorignore to exclude switcher script: {switcher_entry}")
-                else:
-                    print("📝 .cursorignore already excludes switcher script")
-            else:
-                cursorignore_path.write_text(
-                    "# Ignore codebase switcher script to avoid contaminating AI conversations\n"
-                    "codebase_switcher.py\n",
-                    encoding='utf-8'
-                )
-                print("📝 Created .cursorignore to exclude switcher script from AI context")
-        except (OSError, UnicodeError) as e:
-            print(f"⚠️  Warning: Could not create/update .cursorignore: {e}")
+            self.run_git_command(['add', '.'])
+            self.run_git_command(['commit', '-m', 'Initial commit'])
 
-        # Create initial commit if needed
-        if not self.run_git_command(['log', '--oneline', '-1'], capture_output=True):
-            print("📝 Creating initial commit...")
-            
-            if not self.run_git_command(['add', '.']):
-                print("❌ Failed to stage files")
-                return False
-            if not self.run_git_command(['commit', '-m', 'Initial commit']):
-                print("❌ Failed to create initial commit")
-                return False
+        elif self.run_git_command(['diff'], capture_output=True):
+            self.run_git_command(['add', '.'])
+
+        # if init was run more than once there might not be any changes to commit
+        if self.run_git_command(['diff', '--staged'], capture_output=True):
+            self.run_git_command(['commit', '-m', 'Commit .gitignore changes'])
+
+        if self.get_current_branch() != "preedit":
+            if self.branch_exists('preedit'):
+                self.run_git_command(['branch', '-D', 'preedit'])
+            self.run_git_command(['checkout', '-b', 'preedit'])
+
+        # Create gemini and sonnet branches from preedit
+        for model in ['gemini', 'sonnet']:
+            if self.branch_exists(model):
+                self.run_git_command(['branch', '-D', model])            
+
+            print(f"📝 Creating {model} branch from preedit")
+            self.run_git_command(['checkout', '-b', model])
         
-        # Commit any uncommitted changes before proceeding (including untracked files)
-        current = self.get_current_branch()
-        if self.run_git_command(['status', '--porcelain'], capture_output=True):
-            print(f"💾 Committing all changes (including untracked files) on {current} before initializing")
-            if not self.run_git_command(['add', '.']):
-                print("❌ Failed to stage changes")
-                return False
-            if not self.run_git_command(['commit', '-m', f'Update {current} state during init']):
-                print("❌ Failed to commit changes")
-                return False
-        
-        # Create or update branches
-        if not self.branch_exists('preedit'):
-            print("📝 Creating preedit branch")
-            if not self.run_git_command(['checkout', '-b', 'preedit']):
-                print("❌ Failed to create preedit branch")
-                return False
-            if self.run_git_command(['status', '--porcelain'], capture_output=True):
-                self.run_git_command(['commit', '-m', 'Initialize preedit state'])
-        else:
-            if not self.run_git_command(['checkout', 'preedit']):
-                print("❌ Failed to switch to preedit branch")
-                return False
-        
-        # Create or update gemini and opus branches from current preedit state
-        for state in ['gemini', 'opus']:
-            if not self.branch_exists(state):
-                print(f"📝 Creating {state} branch from preedit")
-                if not self.run_git_command(['checkout', '-b', state]):
-                    print(f"❌ Failed to create {state} branch")
-                    return False
-                if not self.run_git_command(['checkout', 'preedit']):
-                    print("❌ Failed to return to preedit branch")
-                    return False
-            else:
-                print(f"🔄 Updating {state} branch to match current preedit state")
-                if not self.run_git_command(['checkout', state]):
-                    print(f"❌ Failed to switch to {state} branch")
-                    return False
-                # Reset the branch to match preedit (this preserves changes made to preedit)
-                if not self.run_git_command(['reset', '--hard', 'preedit']):
-                    print(f"❌ Failed to update {state} branch")
-                    return False
-                if not self.run_git_command(['checkout', 'preedit']):
-                    print("❌ Failed to return to preedit branch")
-                    return False
-        
-        if not self.run_git_command(['checkout', 'preedit']):
-            print("❌ Failed to switch to preedit branch")
-            return False
+        self.run_git_command(['checkout', 'preedit'])
             
         print(f"✅ Initialized with states: {', '.join(self.states)}")
         print("📍 Currently on: preedit")
         return True
     
-    
     def switch_state(self, state):
         """Switch to specified state"""
-        if state not in ['gemini', 'opus']:
-            print(f"❌ Invalid state. Available: gemini, opus")
-            return False
+        if state not in ['gemini', 'sonnet']:
+            raise ValueError(f"❌ Invalid state {state}. Available: gemini, sonnet")
         
         if not self.check_git_available():
-            return False
+            raise RuntimeError("Git must be installed and available for this script to run.")
         
         if not (self.current_dir / '.git').exists():
-            print("❌ Not a git repo. Run --init first.")
-            return False
+            raise RuntimeError("❌ Not a git repo. Run this script with --init first..")
         
         if not self.branch_exists(state):
-            print(f"❌ State '{state}' doesn't exist. Run --init first.")
-            return False
+            raise RuntimeError(f"❌ State '{state}' doesn't exist. Run --init first.")
         
         current = self.get_current_branch()
         if current == state:
             print(f"✅ Already on {state}")
             return True
         
-        # Handle changes based on current branch
+        # Handle changes based on transition type
         if self.run_git_command(['status', '--porcelain'], capture_output=True):
-            if current == 'preedit':
-                # Always discard changes when leaving preedit
-                print(f"🗑️  Discarding changes from preedit (use --init to save changes)")
-                if not self.run_git_command(['reset', '--hard']):
-                    print("❌ Failed to discard changes")
-                    return False
-                # Also remove untracked files
-                if not self.run_git_command(['clean', '-fd']):
-                    print("❌ Failed to remove untracked files")
-                    return False
+            if current == 'preedit' and state == 'gemini':
+                # Discard changes when moving from preedit to gemini (preserve original state)
+                print(f"🗑️  Discarding changes from {current} to preserve original state")
+                self.run_git_command(['reset', '--hard'])
             else:
-                # Auto-commit changes when leaving gemini/opus
+                # Auto-commit changes for all other transitions
                 print(f"💾 Auto-committing changes from {current} before switching to {state}")
-                if not self.run_git_command(['add', '.']):
-                    print("❌ Failed to stage changes")
-                    return False
-                if not self.run_git_command(['commit', '-m', f'Auto-commit from {current} before switching to {state}']):
-                    print("❌ Failed to commit changes")
-                    return False
+                self.run_git_command(['add', '.'])
+                self.run_git_command(['commit', '-m', f'Auto-commit from {current} before switching to {state}'])
         
         print(f"🔄 Switching to {state}...")
         if self.run_git_command(['checkout', state]):
             print(f"✅ Now on {state}")
             return True
         
-        print(f"❌ Failed to switch to {state}")
-        return False
+        raise RuntimeError(f"❌ Failed to switch to {state}")
+
     
     def show_status(self):
         """Show current status"""
@@ -232,7 +164,7 @@ class CodebaseSwitcher:
             return
         
         print(f"📍 Current state: {self.get_current_branch()}")
-        print(f"📋 Available: gemini, opus")
+        print(f"📋 Available: gemini, sonnet")
         print(f"\n🔄 Git status:")
         if not self.run_git_command(['status', '--short']):
             print("No changes")
@@ -269,7 +201,7 @@ class CodebaseSwitcher:
         return True
     
     def verify_branches_different(self):
-        """Verify that preedit, gemini, and opus branches are different"""
+        """Verify that preedit, gemini, and sonnet branches are different"""
         print("🔍 Verifying branches are different...")
         
         for state in self.states:
@@ -279,8 +211,8 @@ class CodebaseSwitcher:
         
         branch_pairs = [
             ('preedit', 'gemini'),
-            ('preedit', 'opus'), 
-            ('gemini', 'opus')
+            ('preedit', 'sonnet'), 
+            ('gemini', 'sonnet')
         ]
         
         identical_pairs = []
@@ -312,26 +244,16 @@ class CodebaseSwitcher:
             print("❌ Not a git repo. Run --init first.")
             return False
         
-        # Handle uncommitted changes before creating zip
-        current = self.get_current_branch()
+        # Auto-commit any changes before creating zip
         if self.run_git_command(['status', '--porcelain'], capture_output=True):
-            if current == 'preedit':
-                print(f"🗑️  Discarding all changes and untracked files in preedit before creating zip")
-                if not self.run_git_command(['reset', '--hard']):
-                    print("❌ Failed to discard changes")
-                    return False
-                # Also remove untracked files
-                if not self.run_git_command(['clean', '-fd']):
-                    print("❌ Failed to remove untracked files")
-                    return False
-            else:
-                print(f"💾 Auto-committing changes on {current} before creating zip")
-                if not self.run_git_command(['add', '.']):
-                    print("❌ Failed to stage changes")
-                    return False
-                if not self.run_git_command(['commit', '-m', f'Auto-commit on {current} before zip creation']):
-                    print("❌ Failed to commit changes")
-                    return False
+            current = self.get_current_branch()
+            print(f"💾 Auto-committing changes on {current} before creating zip")
+            if not self.run_git_command(['add', '.']):
+                print("❌ Failed to stage changes")
+                return False
+            if not self.run_git_command(['commit', '-m', f'Auto-commit on {current} before zip creation']):
+                print("❌ Failed to commit changes")
+                return False
         
         if not self.verify_branches_different():
             return False
@@ -357,6 +279,7 @@ class CodebaseSwitcher:
             print(f"✅ Created {zip_name} ({file_size_kb:.1f} KB)")
             print("📋 Zip contains: codebase + .git structure")
             
+            self.cleanup_switcher_branches()
             return True
             
         except Exception as e:
@@ -374,7 +297,7 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-i', '--init', action='store_true', help='Initialize states')
     group.add_argument('-2', '--gemini', action='store_true', help='Switch to gemini') 
-    group.add_argument('-3', '--opus', action='store_true', help='Switch to opus')
+    group.add_argument('-3', '--sonnet', action='store_true', help='Switch to sonnet')
     group.add_argument('-s', '--status', action='store_true', help='Show status')
     group.add_argument('-z', '--zip', action='store_true', help='Create zip')
     
@@ -385,12 +308,12 @@ def main():
         switcher.initialize()
     elif args.gemini:
         switcher.switch_state('gemini')
-    elif args.opus:
-        switcher.switch_state('opus')
+    elif args.sonnet:
+        switcher.switch_state('sonnet')
     elif args.status:
         switcher.show_status()
     elif args.zip:
         switcher.create_zip()
 
 if __name__ == '__main__':
-    main() 
+    main()
