@@ -37,6 +37,3 @@ codebase_switcher.py
 
 .cursorindexingignore
 
-# Ignore specstory folders.
-
-.specstory/
