@@ -94,7 +94,7 @@ export const handleRedirect = async () => {
       return null;
     }
   } else {
-    // Clean up URL if there's a code but no verifier (corrupted state)
+1    // Clean up URL if there's a code but no verifier (corrupted state)
     if (code) {
       console.log('Cleaning up URL with orphaned authorization code');
       window.history.replaceState({}, document.title, window.location.pathname);
