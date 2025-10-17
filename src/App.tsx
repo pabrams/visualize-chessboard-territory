@@ -4,18 +4,18 @@ import { useChessGame } from './hooks/useChessGame';
 import { useTheme } from './hooks/useTheme';
 import { useArrows } from './hooks/useArrows';
 import { ChessBoard } from './components/ChessBoard/ChessBoard';
-import { ThemeToggle } from './components/Settings/ThemeToggle';
-import { SettingsButton } from './components/Settings/SettingsButton';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { NavigationControls } from './components/Navigation/NavigationControls';
 import { MoveHistory } from './components/MoveHistory/MoveHistory';
 import { FenInput } from './components/FenInput/FenInput';
 import { PuzzleButton } from './components/Puzzle/PuzzleButton';
 import { PuzzleSuccessIndicator } from './components/Puzzle/PuzzleSuccessIndicator';
+import { Sidebar } from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   
   // Custom hooks
   const chessGame = useChessGame();
@@ -65,8 +65,14 @@ const App = () => {
 
   return (
     <>
-      <Header />
+      <Header
+        onOpenSidebar={() => setShowSidebar(true)}
+        theme={theme.theme}
+        onToggleTheme={theme.toggleTheme}
+        onOpenSettings={() => setShowSettings(!showSettings)}
+      />
       <PuzzleSuccessIndicator show={chessGame.puzzleState.completed} theme={theme.theme} />
+
       <div
         data-testid="app-container"
         style={{
@@ -83,6 +89,15 @@ const App = () => {
           boxSizing: 'border-box'
         }}
       >
+        {/* Sidebar */}
+        <Sidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} theme={theme.theme}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ margin: 0, marginBottom: '0.5rem', color: theme.theme === 'dark' ? '#ffffff' : '#000000' }}>
+              Puzzles
+            </h3>
+            <PuzzleButton theme={theme.theme} chessGame={chessGame} />
+          </div>
+        </Sidebar>
         <div data-testid="arrows-list" style={{ display: 'none' }}>
           {arrows.arrows.map(({ startSquare, endSquare, color }, i) => (
             <div key={i}>
@@ -91,15 +106,6 @@ const App = () => {
           ))}
         </div>
 
-        {/* Theme toggle button */}
-        <ThemeToggle theme={theme.theme} toggleTheme={theme.toggleTheme} />
-
-        {/* Settings button */}
-        <SettingsButton theme={theme.theme} onClick={() => setShowSettings(!showSettings)} />
-
-        {/* Puzzle button */}
-        <PuzzleButton theme={theme.theme} chessGame={chessGame} />
-
         {/* Settings panel */}
         {showSettings && (
           <SettingsPanel
@@ -107,6 +113,7 @@ const App = () => {
             currentThemeColors={theme.currentThemeColors}
             setLightThemeColors={theme.setLightThemeColors}
             setDarkThemeColors={theme.setDarkThemeColors}
+            onClose={() => setShowSettings(false)}
           />
         )}
 

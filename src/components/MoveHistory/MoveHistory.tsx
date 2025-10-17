@@ -15,11 +15,12 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
   onMoveClick,
 }) => {
   return (
-    <div 
+    <div
       data-testid="movehistory"
       style={{
         width: '100%',
-        height: '200px',
+        flex: 1,
+        minHeight: 0, // Important for flex scrolling
         border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
         borderRadius: '12px',
         padding: '1.5rem',
@@ -28,8 +29,8 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
         overflowY: 'auto',
         fontSize: '14px',
         fontFamily: 'monospace',
-        boxShadow: theme === 'dark' 
-          ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+        boxShadow: theme === 'dark'
+          ? '0 4px 12px rgba(0, 0, 0, 0.3)'
           : '0 4px 12px rgba(0, 0, 0, 0.1)',
         boxSizing: 'border-box',
       }}
