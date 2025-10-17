@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Chess, Square } from 'chess.js';
 import { GameTree, GameNode } from '../types/GameTree';
 import {
@@ -9,10 +9,25 @@ import {
   getMainLine,
 } from '../utils/gameTreeUtils';
 
+interface PuzzleState {
+  active: boolean;
+  solution: string[]; // Array of moves in UCI format (e.g., ['e2e4', 'e7e5'])
+  currentMoveIndex: number; // Index of the next expected move in the solution
+  isPlayerTurn: boolean; // Whether it's the player's turn or the engine is making a move
+  completed: boolean; // Whether the puzzle has been successfully completed
+}
+
 export const useChessGame = () => {
   const chessGameRef = useRef(new Chess());
   const [gameTree, setGameTree] = useState<GameTree>(createInitialGameTree());
   const [chessPosition, setChessPosition] = useState(chessGameRef.current.fen());
+  const [puzzleState, setPuzzleState] = useState<PuzzleState>({
+    active: false,
+    solution: [],
+    currentMoveIndex: 0,
+    isPlayerTurn: false,
+    completed: false,
+  });
 
   const getCurrentNode = (): GameNode => {
     return gameTree.nodes[gameTree.currentNodeId];
@@ -97,12 +112,55 @@ export const useChessGame = () => {
         return false;
       }
 
-      // Add the move to the game tree
+      // If puzzle mode is active and it's the player's turn, validate the move
+      if (puzzleState.active && puzzleState.isPlayerTurn) {
+        const expectedMove = puzzleState.solution[puzzleState.currentMoveIndex];
+        const playerMove = move.lan; // Use LAN format for comparison
+
+        // Check if the move matches the expected solution move
+        if (playerMove !== expectedMove) {
+          return false; // Reject the move if it doesn't match the solution
+        }
+
+        // Correct move! Add it to the tree
+        const { tree: updatedTree } = addMoveToTree(
+          gameTree,
+          gameTree.currentNodeId,
+          move.lan,
+          move.san,
+          tempGame.fen()
+        );
+
+        setGameTree(updatedTree);
+        setChessPosition(tempGame.fen());
+        chessGameRef.current.load(tempGame.fen());
+
+        // Check if this was the last move in the solution
+        if (puzzleState.currentMoveIndex === puzzleState.solution.length - 1) {
+          // Puzzle completed!
+          setPuzzleState(prev => ({
+            ...prev,
+            completed: true,
+            isPlayerTurn: false,
+          }));
+        } else {
+          // More moves to go - increment index and set to opponent's turn
+          setPuzzleState(prev => ({
+            ...prev,
+            currentMoveIndex: prev.currentMoveIndex + 1,
+            isPlayerTurn: false,
+          }));
+        }
+
+        return true;
+      }
+
+      // Normal mode - just add the move to the game tree
       const { tree: updatedTree } = addMoveToTree(
         gameTree,
         gameTree.currentNodeId,
-        move.lan, // Long algebraic notation for internal storage
-        move.san, // Standard algebraic notation for display
+        move.lan,
+        move.san,
         tempGame.fen()
       );
 
@@ -206,16 +264,12 @@ export const useChessGame = () => {
         newTree.currentNodeId = updatedTree.currentNodeId;
         currentNodeId = newNodeId;
       }
-      
-      // If initialPly is specified, navigate to that position
+
       if (initialPly !== undefined && initialPly >= 0) {
         const targetPly = Math.min(initialPly, moves.length);
-        console.log(`🐛 Debug: targetPly=${targetPly}, moves.length=${moves.length}, initialPly=${initialPly}`);
-        
+
         if (targetPly === 0) {
-          // Stay at starting position
           newTree.currentNodeId = newTree.rootId;
-          console.log('🐛 Debug: Staying at root position');
         } else {
           // Navigate to the specified ply
           let nodeId = newTree.rootId;
@@ -223,31 +277,26 @@ export const useChessGame = () => {
             const node = newTree.nodes[nodeId];
             if (node.children.length > 0) {
               nodeId = node.children[0];
-              console.log(`🐛 Debug: Navigated to ply ${i + 1}, nodeId=${nodeId}`);
             } else {
-              console.log(`🐛 Debug: No more children at ply ${i + 1}`);
               break;
             }
           }
           newTree.currentNodeId = nodeId;
-          console.log(`🐛 Debug: Final position nodeId=${nodeId}`);
         }
       } else {
         // Navigate to the final position
         newTree.currentNodeId = currentNodeId;
-        console.log('🐛 Debug: No initialPly specified, going to final position');
       }
-      
+
       setGameTree(newTree);
-      
+
       // Update chess position directly using the new tree
       const currentNode = newTree.nodes[newTree.currentNodeId];
       if (currentNode) {
         chessGameRef.current.load(currentNode.fen);
         setChessPosition(currentNode.fen);
-        console.log(`🐛 Debug: Set board position to FEN: ${currentNode.fen}`);
       }
-      
+
       return true;
     } catch (e) {
       console.error('Failed to load PGN:', e);
@@ -255,11 +304,91 @@ export const useChessGame = () => {
     }
   };
 
+  const startPuzzleMode = (solution: string[]) => {
+    setPuzzleState({
+      active: true,
+      solution,
+      currentMoveIndex: 0,
+      isPlayerTurn: false,
+      completed: false,
+    });
+  };
+
+  const exitPuzzleMode = () => {
+    setPuzzleState({
+      active: false,
+      solution: [],
+      currentMoveIndex: 0,
+      isPlayerTurn: false,
+      completed: false,
+    });
+  };
+
+  // Auto-play opponent moves in puzzle mode
+  useEffect(() => {
+    if (!puzzleState.active || puzzleState.isPlayerTurn || puzzleState.completed) {
+      return;
+    }
+
+    // One second delay before making the opponent's first move
+    const timer = setTimeout(() => {
+      const nextMove = puzzleState.solution[puzzleState.currentMoveIndex];
+      if (!nextMove) {
+        console.error('No move found in solution at index', puzzleState.currentMoveIndex);
+        return;
+      }
+
+      // Parse the UCI move (e.g., "e2e4")
+      const from = nextMove.substring(0, 2);
+      const to = nextMove.substring(2, 4);
+      const promotion = nextMove.length > 4 ? nextMove.substring(4) : undefined;
+
+      // Create a temporary chess instance at the current position
+      const tempGame = new Chess();
+      const currentNode = getCurrentNode();
+      tempGame.load(currentNode.fen);
+
+      const move = tempGame.move({
+        from,
+        to,
+        promotion: promotion as 'q' | 'r' | 'b' | 'n' | undefined,
+      });
+
+      if (!move) {
+        console.error('❌ Failed to make opponent move:', nextMove);
+        return;
+      }
+
+      // Add the move to the game tree
+      const { tree: updatedTree } = addMoveToTree(
+        gameTree,
+        gameTree.currentNodeId,
+        move.lan,
+        move.san,
+        tempGame.fen()
+      );
+
+      setGameTree(updatedTree);
+      setChessPosition(tempGame.fen());
+      chessGameRef.current.load(tempGame.fen());
+
+      // Now it's the player's turn
+      setPuzzleState(prev => ({
+        ...prev,
+        currentMoveIndex: prev.currentMoveIndex + 1,
+        isPlayerTurn: true,
+      }));
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [puzzleState, gameTree]);
+
   const getAttackers = (square: Square, color: 'w' | 'b') => {
     return chessGameRef.current.attackers(square, color);
   };
 
-  // Get move history for display (backward compatibility)
   const getMoveHistory = (): string[] => {
     const path = getPathToNode(gameTree, gameTree.currentNodeId);
     return path.slice(1).map(node => node.san || '').filter(san => san !== '');
@@ -275,25 +404,21 @@ export const useChessGame = () => {
     return path.length - 1;
   };
 
-  // Check if we're at the final position (no children and no variations)
   const isAtFinalPosition = (): boolean => {
     const currentNode = getCurrentNode();
     return currentNode.children.length === 0 && currentNode.variations.length === 0;
   };
 
-  // Check if we can go forward (has children in main line)
   const canGoForward = (): boolean => {
     const currentNode = getCurrentNode();
     return currentNode.children.length > 0;
   };
 
-  // Check if we can go backward (has parent)
   const canGoBackward = (): boolean => {
     const currentNode = getCurrentNode();
     return currentNode.parent !== null;
   };
 
-  // Check if we're at the start
   const isAtStart = (): boolean => {
     const currentNode = getCurrentNode();
     return currentNode.id === gameTree.rootId;
@@ -319,5 +444,8 @@ export const useChessGame = () => {
     loadFen,
     loadPgn,
     getAttackers,
+    puzzleState,
+    startPuzzleMode,
+    exitPuzzleMode,
   };
 };
