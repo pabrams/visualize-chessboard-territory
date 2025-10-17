@@ -1,3 +1,5 @@
+import { LichessPuzzle } from '../types/lichess';
+
 const LICHESS_HOST = 'https://lichess.org';
 const CLIENT_ID = 'visualize-chessboard-territory';
 
@@ -100,4 +102,49 @@ export const handleRedirect = async () => {
     }
   }
   return null;
+};
+
+export const fetchPuzzle = async (params?: {
+  themes?: string | string[];
+  rating?: number;
+  color?: 'white' | 'black';
+  player?: string;
+}): Promise<LichessPuzzle | null> => {
+  try {
+    const url = new URL(`${LICHESS_HOST}/api/puzzle/next`);
+    
+    if (params) {
+      if (params.themes) {
+        const themes = Array.isArray(params.themes) ? params.themes.join(',') : params.themes;
+        url.searchParams.set('themes', themes);
+      }
+      if (params.rating) {
+        url.searchParams.set('rating', params.rating.toString());
+      }
+      if (params.color) {
+        url.searchParams.set('color', params.color);
+      }
+      if (params.player) {
+        url.searchParams.set('player', params.player);
+      }
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const puzzle: LichessPuzzle = await response.json();
+      return puzzle;
+    } else {
+      console.error('Failed to fetch puzzle:', response.status, response.statusText);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching puzzle:', error);
+    return null;
+  }
 };

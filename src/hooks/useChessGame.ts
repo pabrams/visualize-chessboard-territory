@@ -172,6 +172,81 @@ export const useChessGame = () => {
     }
   };
 
+  const loadPgn = (pgn: string, initialPly?: number) => {
+    try {
+      const tempGame = new Chess();
+      tempGame.loadPgn(pgn);
+
+      // Create a new game tree starting from the initial position
+      const newTree = createInitialGameTree();
+      let currentNodeId = newTree.rootId;
+
+      // Get the move history
+      const moves = tempGame.history({ verbose: true });
+
+      // Add each move to the tree
+      for (const move of moves) {
+        const { tree: updatedTree, newNodeId } = addMoveToTree(
+          newTree,
+          currentNodeId,
+          move.lan,
+          move.san,
+          move.after // This should be the FEN after the move
+        );
+        // Update the tree properly
+        newTree.nodes = updatedTree.nodes;
+        newTree.currentNodeId = updatedTree.currentNodeId;
+        currentNodeId = newNodeId;
+      }
+      
+      // If initialPly is specified, navigate to that position
+      if (initialPly !== undefined && initialPly >= 0) {
+        const targetPly = Math.min(initialPly, moves.length);
+        console.log(`🐛 Debug: targetPly=${targetPly}, moves.length=${moves.length}, initialPly=${initialPly}`);
+        
+        if (targetPly === 0) {
+          // Stay at starting position
+          newTree.currentNodeId = newTree.rootId;
+          console.log('🐛 Debug: Staying at root position');
+        } else {
+          // Navigate to the specified ply
+          let nodeId = newTree.rootId;
+          for (let i = 0; i < targetPly; i++) {
+            const node = newTree.nodes[nodeId];
+            if (node.children.length > 0) {
+              nodeId = node.children[0];
+              console.log(`🐛 Debug: Navigated to ply ${i + 1}, nodeId=${nodeId}`);
+            } else {
+              console.log(`🐛 Debug: No more children at ply ${i + 1}`);
+              break;
+            }
+          }
+          newTree.currentNodeId = nodeId;
+          console.log(`🐛 Debug: Final position nodeId=${nodeId}`);
+        }
+      } else {
+        // Navigate to the final position
+        newTree.currentNodeId = currentNodeId;
+        console.log('🐛 Debug: No initialPly specified, going to final position');
+      }
+      
+      setGameTree(newTree);
+      
+      // Update chess position directly using the new tree
+      const currentNode = newTree.nodes[newTree.currentNodeId];
+      if (currentNode) {
+        chessGameRef.current.load(currentNode.fen);
+        setChessPosition(currentNode.fen);
+        console.log(`🐛 Debug: Set board position to FEN: ${currentNode.fen}`);
+      }
+      
+      return true;
+    } catch (e) {
+      console.error('Failed to load PGN:', e);
+      return false;
+    }
+  };
+
   const getAttackers = (square: Square, color: 'w' | 'b') => {
     return chessGameRef.current.attackers(square, color);
   };
@@ -234,6 +309,7 @@ export const useChessGame = () => {
     makeMoveFromNode,
     navigateToMove,
     loadFen,
+    loadPgn,
     getAttackers,
   };
 };

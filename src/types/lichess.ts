@@ -33,3 +33,28 @@ export interface LichessUser {
   online: boolean;
   streaming: boolean;
 }
+
+export interface LichessPuzzle {
+  game: {
+    id: string;
+    perf: {
+      key: string;
+      name: string;
+    };
+    rated: boolean;
+    players: Array<{
+      userId: string;
+      name: string;
+      color: 'white' | 'black';
+    }>;
+    pgn: string;
+  };
+  puzzle: {
+    id: string;
+    rating: number;
+    plays: number;
+    initialPly: number;
+    solution: string[];
+    themes: string[];
+  };
+}
