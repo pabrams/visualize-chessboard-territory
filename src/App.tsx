@@ -10,6 +10,7 @@ import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { NavigationControls } from './components/Navigation/NavigationControls';
 import { MoveHistory } from './components/MoveHistory/MoveHistory';
 import { FenInput } from './components/FenInput/FenInput';
+import { PuzzleButton } from './components/Puzzle/PuzzleButton';
 import Header from './components/Header/Header';
 
 const App = () => {
@@ -93,6 +94,9 @@ const App = () => {
 
         {/* Settings button */}
         <SettingsButton theme={theme.theme} onClick={() => setShowSettings(!showSettings)} />
+
+        {/* Puzzle button */}
+        <PuzzleButton theme={theme.theme} chessGame={chessGame} />
 
         {/* Settings panel */}
         {showSettings && (
