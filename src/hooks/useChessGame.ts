@@ -330,7 +330,10 @@ export const useChessGame = () => {
       return;
     }
 
-    // One second delay before making the opponent's first move
+    // First opponent move: 1 second delay
+    // Subsequent opponent moves: 300ms delay
+    const delay = puzzleState.currentMoveIndex === 0 ? 1000 : 300;
+
     const timer = setTimeout(() => {
       const nextMove = puzzleState.solution[puzzleState.currentMoveIndex];
       if (!nextMove) {
@@ -378,7 +381,7 @@ export const useChessGame = () => {
         currentMoveIndex: prev.currentMoveIndex + 1,
         isPlayerTurn: true,
       }));
-    }, 1000);
+    }, delay);
 
     return () => {
       clearTimeout(timer);
