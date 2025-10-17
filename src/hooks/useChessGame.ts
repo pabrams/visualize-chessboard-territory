@@ -15,6 +15,9 @@ interface PuzzleState {
   currentMoveIndex: number; // Index of the next expected move in the solution
   isPlayerTurn: boolean; // Whether it's the player's turn or the engine is making a move
   completed: boolean; // Whether the puzzle has been successfully completed
+  drillMode: boolean; // Whether this is a drill puzzle
+  puzzleStartTime?: number; // Timestamp when puzzle started (for drill mode)
+  onWrongMove?: () => void; // Callback for wrong moves in drill mode
 }
 
 export const useChessGame = () => {
@@ -27,6 +30,7 @@ export const useChessGame = () => {
     currentMoveIndex: 0,
     isPlayerTurn: false,
     completed: false,
+    drillMode: false,
   });
 
   const getCurrentNode = (): GameNode => {
@@ -119,6 +123,10 @@ export const useChessGame = () => {
 
         // Check if the move matches the expected solution move
         if (playerMove !== expectedMove) {
+          // In drill mode, call the wrong move callback and allow the move to be rejected
+          if (puzzleState.drillMode && puzzleState.onWrongMove) {
+            puzzleState.onWrongMove();
+          }
           return false; // Reject the move if it doesn't match the solution
         }
 
@@ -304,13 +312,18 @@ export const useChessGame = () => {
     }
   };
 
-  const startPuzzleMode = (solution: string[]) => {
+  const startPuzzleMode = (solution: string[], drillMode: boolean = false, onWrongMove?: () => void) => {
     setPuzzleState({
       active: true,
       solution,
       currentMoveIndex: 0,
-      isPlayerTurn: false,
+      // In drill mode, we load to final position so it's player's turn
+      // In normal mode, solution[0] is opponent's setup move
+      isPlayerTurn: drillMode,
       completed: false,
+      drillMode,
+      puzzleStartTime: drillMode ? Date.now() : undefined,
+      onWrongMove,
     });
   };
 
@@ -321,6 +334,9 @@ export const useChessGame = () => {
       currentMoveIndex: 0,
       isPlayerTurn: false,
       completed: false,
+      drillMode: false,
+      puzzleStartTime: undefined,
+      onWrongMove: undefined,
     });
   };
 
@@ -330,9 +346,9 @@ export const useChessGame = () => {
       return;
     }
 
-    // First opponent move: 1 second delay
-    // Subsequent opponent moves: 300ms delay
-    const delay = puzzleState.currentMoveIndex === 0 ? 1000 : 300;
+    // Drill mode: 50ms delay for all moves
+    // Normal mode: First opponent move 1 second, subsequent 300ms
+    const delay = puzzleState.drillMode ? 50 : (puzzleState.currentMoveIndex === 0 ? 1000 : 300);
 
     const timer = setTimeout(() => {
       const nextMove = puzzleState.solution[puzzleState.currentMoveIndex];
