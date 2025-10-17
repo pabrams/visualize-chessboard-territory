@@ -11,6 +11,7 @@ import { NavigationControls } from './components/Navigation/NavigationControls';
 import { MoveHistory } from './components/MoveHistory/MoveHistory';
 import { FenInput } from './components/FenInput/FenInput';
 import { PuzzleButton } from './components/Puzzle/PuzzleButton';
+import { PuzzleSuccessIndicator } from './components/Puzzle/PuzzleSuccessIndicator';
 import Header from './components/Header/Header';
 
 const App = () => {
@@ -65,8 +66,9 @@ const App = () => {
   return (
     <>
       <Header />
-      <div 
-        data-testid="app-container" 
+      <PuzzleSuccessIndicator show={chessGame.puzzleState.completed} theme={theme.theme} />
+      <div
+        data-testid="app-container"
         style={{
           minHeight: 'calc(100vh - 60px)', // Adjust for header height
           display: 'flex',
@@ -166,6 +168,7 @@ const App = () => {
             onPieceDrop={handlePieceDrop}
             onSquareRightClick={handleSquareRightClick}
             onMoveComplete={handleMoveComplete}
+            isPuzzleAutoPlaying={chessGame.puzzleState.active && !chessGame.puzzleState.isPlayerTurn}
           />
         </div>
       </div>

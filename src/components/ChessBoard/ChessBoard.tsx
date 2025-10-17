@@ -14,6 +14,7 @@ interface ChessBoardProps {
   onPieceDrop: (args: PieceDropHandlerArgs) => boolean;
   onSquareRightClick: (args: SquareHandlerArgs) => void;
   onMoveComplete: () => void;
+  isPuzzleAutoPlaying?: boolean;
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -28,8 +29,14 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   onPieceDrop,
   onSquareRightClick,
   onMoveComplete,
+  isPuzzleAutoPlaying = false,
 }) => {
   const handlePieceDrop = (args: PieceDropHandlerArgs) => {
+    // Disable piece drops during puzzle auto-play
+    if (isPuzzleAutoPlaying) {
+      return false;
+    }
+
     const success = onPieceDrop(args);
     if (success) {
       onMoveComplete();
@@ -43,6 +50,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     arrows,
     id: 'chessboard-options',
     position: chessPosition,
+    areDraggablePieces: !isPuzzleAutoPlaying,
     arrowOptions: {
       color: 'yellow',
       secondaryColor: 'red',

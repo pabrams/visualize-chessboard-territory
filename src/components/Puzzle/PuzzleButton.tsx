@@ -5,6 +5,8 @@ interface PuzzleButtonProps {
   theme: 'dark' | 'light';
   chessGame: {
     loadPgn: (pgn: string, initialPly?: number) => boolean;
+    startPuzzleMode: (solution: string[]) => void;
+    goBackward: () => void;
   };
 }
 
@@ -16,20 +18,24 @@ export const PuzzleButton: React.FC<PuzzleButtonProps> = ({ theme, chessGame }) 
     try {
       const puzzle = await fetchPuzzle({ rating: 1000 }); // Request easier puzzles
       if (puzzle) {
-        console.log('🧩 Lichess Puzzle:', puzzle);
-        console.log('🎯 Puzzle ID:', puzzle.puzzle.id);
-        console.log('📈 Rating:', puzzle.puzzle.rating);
-        console.log('🎨 Themes:', puzzle.puzzle.themes);
-        console.log('🔧 Solution:', puzzle.puzzle.solution);
-        console.log('♟️ Initial Position PGN:', puzzle.game.pgn);
-        console.log('🎲 Initial Ply (starting position):', puzzle.puzzle.initialPly);
-        
-        // Load the PGN and navigate to the puzzle starting position
+
+        // Parse the PGN to get all moves
+        const tempChess = new (await import('chess.js')).Chess();
+        tempChess.loadPgn(puzzle.game.pgn);
+        const allMoves = tempChess.history({ verbose: true });
+
+        // Load to initialPly (this positions us ready for the opponent's last move)
+        // The last move of the PGN will be auto-played, then the solution begins
         const success = chessGame.loadPgn(puzzle.game.pgn, puzzle.puzzle.initialPly);
         if (success) {
-          console.log('✅ Puzzle loaded successfully! Position set to initial puzzle position.');
+          // Get the last move from the PGN
+          const lastPgnMove = allMoves[allMoves.length - 1];
+
+          // Start puzzle mode with the last PGN move + solution
+          const fullSequence = [lastPgnMove.lan, ...puzzle.puzzle.solution];
+          chessGame.startPuzzleMode(fullSequence);
         } else {
-          console.error('❌ Failed to load puzzle PGN');
+          console.error('Failed to load puzzle PGN');
         }
       } else {
         console.error('Failed to fetch puzzle');
