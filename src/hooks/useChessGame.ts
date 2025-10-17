@@ -28,11 +28,19 @@ export const useChessGame = () => {
 
   const getLastMove = () => {
     const currentNode = getCurrentNode();
-    if (currentNode.move) {
-      const tempGame = new Chess();
-      tempGame.load(currentNode.fen);
-      const history = tempGame.history({ verbose: true });
-      return history[history.length - 1];
+    if (currentNode.move && currentNode.parent) {
+
+      const move = currentNode.move;
+      const from = move.substring(0, 2);
+      const to = move.substring(2, 4);
+      const promotion = move.length > 4 ? move.substring(4) : undefined;
+      
+      return {
+        from,
+        to,
+        promotion,
+        san: currentNode.san
+      };
     }
     return null;
   };
