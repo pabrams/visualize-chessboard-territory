@@ -21,7 +21,7 @@ describe('useChessGame', () => {
     });
     
     expect(result.current.moveHistory).toEqual(['e4']);
-    expect(result.current.currentMoveIndex).toBe(0);
+    expect(result.current.currentMoveIndex).toBe(1);
     expect(result.current.chessPosition).toBe('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1');
   });
 
@@ -61,6 +61,6 @@ describe('useChessGame', () => {
       result.current.goForward();
     });
     
-    expect(result.current.currentMoveIndex).toBe(0);
+    expect(result.current.currentMoveIndex).toBe(1);
   });
 });

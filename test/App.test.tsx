@@ -41,7 +41,6 @@ vi.mock('react-chessboard', () => ({
 }));
 describe('App', () => {
   beforeEach(() => {
-    // Reset the move before each test to avoid leakage
     moveToSimulate = null;
   });
 
@@ -90,42 +89,33 @@ describe('App', () => {
   });
 
   test('persists theme across reloads', async () => {
-    // Setup: Set initial theme to 'light'
     localStorage.setItem('theme', 'light');
-
     const { unmount } = render(<App />);
     const container = screen.getByTestId('app-container');
 
-    // Wait for initial render with light theme (white background)
     await waitFor(() => {
       expect(getComputedStyle(container).backgroundColor).toBe('rgb(248, 249, 250)');
     });
 
-    // Toggle to dark theme (black background)
     fireEvent.click(screen.getByTestId('toggleTheme'));
     await waitFor(() => {
       expect(getComputedStyle(container).backgroundColor).toBe('rgb(10, 10, 10)');
     });
 
-    // Unmount (simulate close)
+    // Simulate page reload by unmounting and remounting the component
     unmount();
-
-    // Re-mount (simulate reload)
     render(<App />);
     const containerReloaded = screen.getByTestId('app-container');
 
-    // Now check if theme persisted as 'dark' (black background)
     await waitFor(() => {
       expect(getComputedStyle(containerReloaded).backgroundColor).toBe('rgb(10, 10, 10)');
     });
-
   });
 
 
   it('displays correct history after 1.e4 d5', () => {
     render(<App />);
 
-    // First move e2-e4
     moveToSimulate = {
       sourceSquare: 'e2',
       targetSquare: 'e4',
@@ -164,7 +154,6 @@ describe('App', () => {
   });
   
   it('saves dark mode preference to localStorage when toggled', () => {
-    // Mock localStorage
     const localStorageMock = {
       getItem: vi.fn(),
       setItem: vi.fn(),
@@ -174,16 +163,12 @@ describe('App', () => {
       length: 0,
     };
     
-    // Replace global localStorage with our mock
     vi.stubGlobal('localStorage', localStorageMock);
-    
     render(<App />);
     
-    // Mock that no dark mode preference exists in localStorage
+    // Mock that no preference exists in localStorage
     localStorageMock.getItem.mockReturnValue(null);
-    
-    // Find and click the toggle button
-    // const toggleButton = screen.getByText(/Switch to Dark Mode/);
+
     const btn = screen.getByTestId('toggleTheme') 
     fireEvent.click(btn);
     
