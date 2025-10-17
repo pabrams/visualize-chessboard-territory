@@ -187,9 +187,9 @@ export const useChessGame = () => {
     if (currentNode.id === gameTree.rootId) {
       return -1; // At starting position
     }
-    // Count the number of moves from root to current position
+    // Count the number of moves from starting to current position
     const path = getPathToNode(gameTree, gameTree.currentNodeId);
-    return path.length - 2; // -1 for root, -1 for 0-based index
+    return path.length - 1;
   };
 
   // Check if we're at the final position (no children and no variations)

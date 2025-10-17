@@ -18,7 +18,6 @@ export const FenInput: React.FC<FenInputProps> = ({ theme, onApplyFen }) => {
       gap: '12px', 
       alignItems: 'center',
       width: '100%',
-      maxWidth: '500px',
       padding: '1rem',
       backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
       borderRadius: '12px',
@@ -26,6 +25,7 @@ export const FenInput: React.FC<FenInputProps> = ({ theme, onApplyFen }) => {
         ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
         : '0 4px 12px rgba(0, 0, 0, 0.1)',
       border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+      boxSizing: 'border-box',
     }}>
       <input
         type="text"

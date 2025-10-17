@@ -51,6 +51,8 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
         ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
         : '0 4px 12px rgba(0, 0, 0, 0.1)',
       border: `1px solid ${theme === 'dark' ? '#333' : '#e0e0e0'}`,
+      boxSizing: 'border-box',
+      justifyContent: 'center',
     }}>
       <button
         onClick={goToStart}
