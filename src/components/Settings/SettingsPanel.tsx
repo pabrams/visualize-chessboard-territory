@@ -6,6 +6,7 @@ interface SettingsPanelProps {
   currentThemeColors: ThemeColors;
   setLightThemeColors: (colors: ThemeColors) => void;
   setDarkThemeColors: (colors: ThemeColors) => void;
+  onClose: () => void;
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -13,6 +14,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   currentThemeColors,
   setLightThemeColors,
   setDarkThemeColors,
+  onClose,
 }) => {
   return (
     <div
@@ -31,9 +33,28 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         minWidth: '300px',
       }}
     >
-      <h3 style={{ marginBottom: '15px', color: theme === 'dark' ? '#ffffff' : '#000000' }}>
-        {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Settings
-      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <h3 style={{ margin: 0, color: theme === 'dark' ? '#ffffff' : '#000000' }}>
+          {theme.charAt(0).toUpperCase() + theme.slice(1)} Theme Settings
+        </h3>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            color: theme === 'dark' ? '#ffffff' : '#000000',
+            padding: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          aria-label="Close settings"
+        >
+          ×
+        </button>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {Object.entries(currentThemeColors).map(([key, value]) => {
           const configName = key.replace('Color', '-color').replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '');
