@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { PieceDropHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { useChessGame } from './hooks/useChessGame';
 import { useTheme } from './hooks/useTheme';
@@ -12,15 +12,99 @@ import { PuzzleButton } from './components/Puzzle/PuzzleButton';
 import { PuzzleSuccessIndicator } from './components/Puzzle/PuzzleSuccessIndicator';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
+import { DrillCountdown } from './components/Drill/DrillCountdown';
+import { DrillTimer } from './components/Drill/DrillTimer';
+import { DrillScoreboard, DrillResult } from './components/Drill/DrillScoreboard';
+import { DrillButton } from './components/Drill/DrillButton';
+import { fetchPuzzle } from './services/lichessAuth';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [drillState, setDrillState] = useState<{
+    active: boolean;
+    showCountdown: boolean;
+    results: DrillResult[];
+  }>({
+    active: false,
+    showCountdown: false,
+    results: [],
+  });
   
   // Custom hooks
   const chessGame = useChessGame();
   const theme = useTheme();
   const arrows = useArrows();
+
+  // Drill mode functions
+  const loadNextDrillPuzzle = useCallback(async () => {
+    try {
+      const puzzle = await fetchPuzzle({ rating: 1000 });
+      if (puzzle) {
+        // For drill mode, load directly to the final position (no initialPly)
+        const success = chessGame.loadPgn(puzzle.game.pgn);
+        if (success) {
+          // In drill mode, we start immediately at the final position
+          // The solution is just the puzzle moves, no need to prepend PGN move
+          chessGame.startPuzzleMode(puzzle.puzzle.solution, true, () => {
+            // On wrong move in drill mode: record failure and load next puzzle
+            const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
+            setDrillState(prev => ({
+              ...prev,
+              results: [...prev.results, { success: false, timeMs }],
+            }));
+            loadNextDrillPuzzle();
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching drill puzzle:', error);
+    }
+  }, [chessGame]);
+
+  const handleDrillStart = () => {
+    setDrillState({
+      active: true,
+      showCountdown: true,
+      results: [],
+    });
+  };
+
+  const handleCountdownComplete = () => {
+    setDrillState(prev => ({ ...prev, showCountdown: false }));
+    loadNextDrillPuzzle();
+  };
+
+  const handleDrillTimeUp = () => {
+    // Save results to localStorage
+    const drillResults = {
+      timestamp: Date.now(),
+      results: drillState.results,
+    };
+    const existingResults = JSON.parse(localStorage.getItem('drillResults') || '[]');
+    localStorage.setItem('drillResults', JSON.stringify([...existingResults, drillResults]));
+
+    // End drill mode
+    setDrillState({
+      active: false,
+      showCountdown: false,
+      results: [],
+    });
+    chessGame.exitPuzzleMode();
+  };
+
+  // Watch for puzzle completion in drill mode
+  React.useEffect(() => {
+    if (drillState.active && chessGame.puzzleState.completed && chessGame.puzzleState.drillMode) {
+      // Record success and load next puzzle
+      const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
+      setDrillState(prev => ({
+        ...prev,
+        results: [...prev.results, { success: true, timeMs }],
+      }));
+      loadNextDrillPuzzle();
+    }
+  }, [chessGame.puzzleState.completed, drillState.active, chessGame.puzzleState.drillMode, loadNextDrillPuzzle]);
 
   const handleSquareRightClick = ({ square }: SquareHandlerArgs) => {
     arrows.showAttackersForSquare(
@@ -71,7 +155,16 @@ const App = () => {
         onToggleTheme={theme.toggleTheme}
         onOpenSettings={() => setShowSettings(!showSettings)}
       />
-      <PuzzleSuccessIndicator show={chessGame.puzzleState.completed} theme={theme.theme} />
+      <PuzzleSuccessIndicator show={chessGame.puzzleState.completed && !chessGame.puzzleState.drillMode} theme={theme.theme} />
+
+      {/* Drill mode components */}
+      {drillState.showCountdown && <DrillCountdown onComplete={handleCountdownComplete} />}
+      {drillState.active && !drillState.showCountdown && (
+        <>
+          <DrillTimer onTimeUp={handleDrillTimeUp} theme={theme.theme} />
+          <DrillScoreboard results={drillState.results} theme={theme.theme} />
+        </>
+      )}
 
       <div
         data-testid="app-container"
@@ -96,6 +189,7 @@ const App = () => {
               Puzzles
             </h3>
             <PuzzleButton theme={theme.theme} chessGame={chessGame} />
+            <DrillButton theme={theme.theme} onStartDrill={handleDrillStart} />
           </div>
         </Sidebar>
         <div data-testid="arrows-list" style={{ display: 'none' }}>
