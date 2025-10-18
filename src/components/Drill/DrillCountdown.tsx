@@ -5,20 +5,30 @@ interface DrillCountdownProps {
 }
 
 export const DrillCountdown: React.FC<DrillCountdownProps> = ({ onComplete }) => {
-  const [count, setCount] = useState(3);
+  const [lightState, setLightState] = useState<'red' | 'yellow' | 'green'>('red');
 
   useEffect(() => {
-    if (count === 0) {
-      onComplete();
-      return;
+    if (lightState === 'red') {
+      const timer = setTimeout(() => {
+        setLightState('yellow');
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (lightState === 'yellow') {
+      const timer = setTimeout(() => {
+        setLightState('green');
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (lightState === 'green') {
+      const timer = setTimeout(() => {
+        onComplete();
+      }, 1000);
+      return () => clearTimeout(timer);
     }
+  }, [lightState, onComplete]);
 
-    const timer = setTimeout(() => {
-      setCount(count - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [count, onComplete]);
+  const handleGreenClick = () => {
+    onComplete();
+  };
 
   return (
     <div
@@ -37,24 +47,60 @@ export const DrillCountdown: React.FC<DrillCountdownProps> = ({ onComplete }) =>
     >
       <div
         style={{
-          fontSize: '120px',
-          fontWeight: 'bold',
-          color: '#ff3333',
-          textShadow: '0 0 20px #3333ff, 0 0 40px #3333ff',
-          animation: 'pulse 1s ease-in-out',
+          background: '#333',
+          borderRadius: '20px',
+          padding: '30px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          boxShadow: '0 0 40px rgba(0, 0, 0, 0.5)',
         }}
       >
-        {count}
+        {/* Red light */}
+        <div
+          style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: lightState === 'red' ? '#ff0000' : '#440000',
+            boxShadow: lightState === 'red' ? '0 0 40px #ff0000' : 'none',
+            transition: 'all 0.3s ease',
+          }}
+        />
+
+        {/* Yellow light */}
+        <div
+          style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: lightState === 'yellow' ? '#ffff00' : '#444400',
+            boxShadow: lightState === 'yellow' ? '0 0 40px #ffff00' : 'none',
+            transition: 'all 0.3s ease',
+          }}
+        />
+
+        {/* Green light */}
+        <div
+          onClick={handleGreenClick}
+          style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: lightState === 'green' ? '#00ff00' : '#004400',
+            boxShadow: lightState === 'green' ? '0 0 40px #00ff00' : 'none',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+            transform: 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        />
       </div>
-      <style>
-        {`
-          @keyframes pulse {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-        `}
-      </style>
     </div>
   );
 };

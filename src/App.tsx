@@ -5,9 +5,6 @@ import { useTheme } from './hooks/useTheme';
 import { useArrows } from './hooks/useArrows';
 import { ChessBoard } from './components/ChessBoard/ChessBoard';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
-import { NavigationControls } from './components/Navigation/NavigationControls';
-import { MoveHistory } from './components/MoveHistory/MoveHistory';
-import { FenInput } from './components/FenInput/FenInput';
 import { PuzzleButton } from './components/Puzzle/PuzzleButton';
 import { PuzzleSuccessIndicator } from './components/Puzzle/PuzzleSuccessIndicator';
 import { Sidebar } from './components/Sidebar/Sidebar';
@@ -16,7 +13,6 @@ import { DrillCountdown } from './components/Drill/DrillCountdown';
 import { DrillTimer } from './components/Drill/DrillTimer';
 import { DrillScoreboard, DrillResult } from './components/Drill/DrillScoreboard';
 import { DrillButton } from './components/Drill/DrillButton';
-import { fetchPuzzle, fetchSingleMovePuzzles } from './services/lichessAuth';
 import { LichessPuzzle } from './types/lichess';
 
 const App = () => {
@@ -215,25 +211,8 @@ const App = () => {
     return chessGame.makeMove(sourceSquare, targetSquare);
   };
 
-  const handleMoveClick = (nodeId: string) => {
-    chessGame.navigateToMove(nodeId);
-    arrows.clearArrows();
-  };
-
   const handleMoveComplete = () => {
     arrows.clearArrows();
-  };
-
-  const handleNavigationAction = (action: () => void) => {
-    action();
-    arrows.clearArrows();
-  };
-
-  const handleApplyFen = (fen: string) => {
-    const success = chessGame.loadFen(fen);
-    if (success) {
-      arrows.clearArrows();
-    }
   };
 
   const lastMove = chessGame.getLastMove();
@@ -279,10 +258,7 @@ const App = () => {
       )}
       {drillState.showCountdown && <DrillCountdown onComplete={handleCountdownComplete} />}
       {drillState.active && !drillState.showCountdown && !drillState.loading && (
-        <>
-          <DrillTimer onTimeUp={handleDrillTimeUp} theme={theme.theme} />
-          <DrillScoreboard results={drillState.results} theme={theme.theme} />
-        </>
+        <DrillTimer onTimeUp={handleDrillTimeUp} theme={theme.theme} />
       )}
 
       <div
@@ -290,9 +266,9 @@ const App = () => {
         style={{
           minHeight: 'calc(100vh - 60px)', // Adjust for header height
           display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'stretch',
-          gap: '2rem',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
           padding: '2rem',
           backgroundColor: theme.currentThemeColors.pageBackgroundColor,
           color: theme.currentThemeColors.pageForegroundColor,
@@ -330,52 +306,65 @@ const App = () => {
           />
         )}
 
-        {/* Left side - Controls and move history */}
+        {/* Begin drill button - only show when not in drill mode */}
+        {!drillState.active && !drillState.loading && !drillState.showCountdown && (
+          <button
+            onClick={handleDrillStart}
+            data-testid="beginButton"
+            title="Begin Drill Puzzles"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.75rem',
+              background: theme.theme === 'dark' ? '#222222' : '#ffffff',
+              border: `1px solid ${theme.theme === 'dark' ? '#444' : '#eeeeee'}`,
+              borderRadius: '8px',
+              padding: '16px 24px',
+              cursor: 'pointer',
+              color: theme.theme === 'dark' ? '#ffffff' : '#000000',
+              transition: 'all 0.2s ease',
+              boxShadow: theme.theme === 'dark'
+                ? '0 4px 12px rgba(0, 0, 0, 0.3)'
+                : '0 4px 12px rgba(0, 0, 0, 0.1)',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              marginBottom: '2rem',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = theme.theme === 'dark'
+                ? '0 6px 16px rgba(0, 0, 0, 0.4)'
+                : '0 6px 16px rgba(0, 0, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = theme.theme === 'dark'
+                ? '0 4px 12px rgba(0, 0, 0, 0.3)'
+                : '0 4px 12px rgba(0, 0, 0, 0.1)';
+            }}
+          >
+            {/* Timer icon */}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="13" r="8" />
+              <path d="M12 9v4l2 2" />
+              <path d="M9 2h6" />
+              <path d="M12 2v2" />
+            </svg>
+            <span>Begin</span>
+          </button>
+        )}
+
+        {/* Chessboard and scoreboard container */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '2rem',
-          width: '400px',
-          minWidth: '300px',
-          maxWidth: '500px',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-        }}>
-
-          {/* Move history */}
-          <MoveHistory
-            theme={theme.theme}
-            gameTree={chessGame.gameTree}
-            onMoveClick={handleMoveClick}
-          />
-                    {/* Navigation buttons */}
-                    <NavigationControls
-            theme={theme.theme}
-            isAtStart={chessGame.isAtStart}
-            canGoBackward={chessGame.canGoBackward}
-            canGoForward={chessGame.canGoForward}
-            isAtFinalPosition={chessGame.isAtFinalPosition}
-            goToStart={() => handleNavigationAction(chessGame.goToStart)}
-            goBackward={() => handleNavigationAction(chessGame.goBackward)}
-            goForward={() => handleNavigationAction(chessGame.goForward)}
-            goToEnd={() => handleNavigationAction(chessGame.goToEnd)}
-          />
-
-          {/* FEN input container */}
-          <FenInput
-            theme={theme.theme}
-            onApplyFen={handleApplyFen}
-          />
-        </div>
-
-        {/* Right side - Chessboard (as large as possible) */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 0, // Important for flex shrinking
+          gap: '0.5rem',
+          width: 'min(90vh, calc(100vw - 600px))',
+          maxWidth: '100%',
         }}>
+          {/* Chessboard */}
           <ChessBoard
             theme={theme.theme}
             chessPosition={chessGame.chessPosition}
@@ -390,6 +379,11 @@ const App = () => {
             onMoveComplete={handleMoveComplete}
             isPuzzleAutoPlaying={chessGame.puzzleState.active && !chessGame.puzzleState.isPlayerTurn}
           />
+
+          {/* Drill scoreboard - below chessboard */}
+          {drillState.active && !drillState.showCountdown && !drillState.loading && (
+            <DrillScoreboard results={drillState.results} theme={theme.theme} />
+          )}
         </div>
       </div>
     </>
