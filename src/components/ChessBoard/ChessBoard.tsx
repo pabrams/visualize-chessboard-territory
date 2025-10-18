@@ -66,12 +66,12 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       activeOpacity: 0.6,
     },
     boardStyle: {
-      width: 'min(90vh, calc(100vw - 600px))',
-      height: 'min(90vh, calc(100vw - 600px))',
+      width: 'min(95vh, calc(100vw - 4rem))',
+      height: 'min(95vh, calc(100vw - 4rem))',
       maxWidth: '100%',
       maxHeight: '100%',
-      boxShadow: theme === 'dark' 
-        ? '0 8px 32px rgba(0, 0, 0, 0.8)' 
+      boxShadow: theme === 'dark'
+        ? '0 8px 32px rgba(0, 0, 0, 0.8)'
         : '0 8px 32px rgba(0, 0, 0, 0.15)',
       borderRadius: '8px',
       overflow: 'hidden',

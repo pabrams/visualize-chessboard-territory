@@ -371,7 +371,7 @@ const App = () => {
           flexDirection: 'column',
           alignItems: 'center',
           gap: '0.5rem',
-          width: 'min(90vh, calc(100vw - 600px))',
+          width: 'min(95vh, calc(100vw - 4rem))',
           maxWidth: '100%',
           position: 'relative',
         }}>
