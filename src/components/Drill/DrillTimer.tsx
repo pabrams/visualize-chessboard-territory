@@ -3,12 +3,17 @@ import React, { useState, useEffect } from 'react';
 interface DrillTimerProps {
   onTimeUp: () => void;
   theme: 'dark' | 'light';
+  isCountdown: boolean;
 }
 
-export const DrillTimer: React.FC<DrillTimerProps> = ({ onTimeUp, theme }) => {
+export const DrillTimer: React.FC<DrillTimerProps> = ({ onTimeUp, isCountdown }) => {
   const [timeLeft, setTimeLeft] = useState(180); // 3 minutes in seconds
 
   useEffect(() => {
+    if (isCountdown) {
+      return; // Don't count down during the traffic light countdown
+    }
+
     if (timeLeft === 0) {
       onTimeUp();
       return;
@@ -19,7 +24,20 @@ export const DrillTimer: React.FC<DrillTimerProps> = ({ onTimeUp, theme }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, onTimeUp]);
+  }, [timeLeft, onTimeUp, isCountdown]);
+
+  if (isCountdown) {
+    return (
+      <div
+        style={{
+          fontSize: '2rem',
+          fontWeight: 'bold',
+        }}
+      >
+        0:00
+      </div>
+    );
+  }
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -28,19 +46,9 @@ export const DrillTimer: React.FC<DrillTimerProps> = ({ onTimeUp, theme }) => {
   return (
     <div
       style={{
-        position: 'fixed',
-        top: '80px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-        border: `2px solid ${isLowTime ? '#ff3333' : theme === 'dark' ? '#444' : '#e0e0e0'}`,
-        borderRadius: '12px',
-        padding: '1rem 2rem',
         fontSize: '2rem',
         fontWeight: 'bold',
-        color: isLowTime ? '#ff3333' : theme === 'dark' ? '#ffffff' : '#000000',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-        zIndex: 1000,
+        color: isLowTime ? '#ff3333' : 'inherit',
       }}
     >
       {minutes}:{seconds.toString().padStart(2, '0')}

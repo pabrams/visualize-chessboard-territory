@@ -6,7 +6,7 @@ import { useArrows } from './hooks/useArrows';
 import { ChessBoard } from './components/ChessBoard/ChessBoard';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import Header from './components/Header/Header';
-import { DrillCountdown } from './components/Drill/DrillCountdown';
+import { TrafficlightCountdown } from './components/Drill/TrafficlightCountdown';
 import { DrillTimer } from './components/Drill/DrillTimer';
 import { DrillScoreboard, DrillResult } from './components/Drill/DrillScoreboard';
 import { LichessPuzzle } from './types/lichess';
@@ -260,11 +260,6 @@ const App = () => {
           </div>
         </div>
       )}
-      {drillState.showCountdown && <DrillCountdown onComplete={handleCountdownComplete} />}
-      {drillState.active && !drillState.showCountdown && !drillState.loading && (
-        <DrillTimer onTimeUp={handleDrillTimeUp} theme={theme.theme} />
-      )}
-
       <div
         data-testid="app-container"
         style={{
@@ -300,8 +295,8 @@ const App = () => {
           />
         )}
 
-        {/* Begin drill button / Color indicator */}
-        {drillState.active && !drillState.loading && !drillState.showCountdown ? (
+        {/* Begin drill button / Timer container */}
+        {drillState.active && !drillState.loading ? (
           <div
             style={{
               display: 'flex',
@@ -320,9 +315,9 @@ const App = () => {
               marginBottom: '2rem',
             }}
           >
-            <span>You play {drillState.playerColor}</span>
+            <DrillTimer onTimeUp={handleDrillTimeUp} theme={theme.theme} isCountdown={drillState.showCountdown} />
           </div>
-        ) : !drillState.loading && !drillState.showCountdown && (
+        ) : !drillState.loading && (
           <button
             onClick={handleDrillStart}
             data-testid="beginButton"
@@ -378,6 +373,7 @@ const App = () => {
           gap: '0.5rem',
           width: 'min(90vh, calc(100vw - 600px))',
           maxWidth: '100%',
+          position: 'relative',
         }}>
           {/* Chessboard */}
           <ChessBoard
@@ -395,6 +391,23 @@ const App = () => {
             isPuzzleAutoPlaying={chessGame.puzzleState.active && !chessGame.puzzleState.isPlayerTurn}
             boardOrientation={drillState.active ? (drillState.playerColor === 'white' ? 'black' : 'white') : 'white'}
           />
+
+          {/* Traffic light countdown - overlaid on chessboard */}
+          {drillState.showCountdown && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: '0.5rem', // Account for gap before scoreboard
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}>
+              <TrafficlightCountdown onComplete={handleCountdownComplete} />
+            </div>
+          )}
 
           {/* Drill scoreboard - below chessboard */}
           {drillState.active && !drillState.showCountdown && !drillState.loading && (
