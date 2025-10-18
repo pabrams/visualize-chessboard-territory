@@ -106,8 +106,8 @@ const App = () => {
     try {
       // Load puzzles from color-specific JSON file
       const puzzleFile = playerColor === 'white'
-        ? '/visualize-chessboard-territory/single-move-puzzles-w.json'
-        : '/visualize-chessboard-territory/single-move-puzzles-b.json';
+        ? '/visualize-chessboard-territory/lichess_db_puzzle-w-one-move-neophyte.json'
+        : '/visualize-chessboard-territory/lichess_db_puzzle-b-one-move-neophyte.json';
       console.log(`Loading ${playerColor} puzzles from ${puzzleFile}...`);
       const response = await fetch(puzzleFile);
       const data = await response.json();

@@ -1,10 +1,8 @@
 import fs from 'fs';
 import readline from 'readline';
+import path from 'path';
 
-async function processPuzzles() {
-  const inputFile = './lichess_db_puzzle.csv';
-  const outputFile = './public/single-move-puzzles.json';
-
+async function processSingleCSV(inputFile, outputFile) {
   const singleMovePuzzles = [];
   let totalProcessed = 0;
   let singleMoveCount = 0;
@@ -24,9 +22,6 @@ async function processPuzzles() {
     }
 
     totalProcessed++;
-    if (totalProcessed % 100000 === 0) {
-      console.log(`Processed ${totalProcessed} puzzles, found ${singleMoveCount} single-move puzzles...`);
-    }
 
     const parts = line.split(',');
 
@@ -57,6 +52,15 @@ async function processPuzzles() {
     }
   }
 
+  // Determine note based on filename
+  const filename = path.basename(inputFile);
+  let note = '';
+  if (filename.includes('-b-')) {
+    note = 'Black to move puzzles only';
+  } else if (filename.includes('-w-')) {
+    note = 'White to move puzzles only';
+  }
+
   // Create output with attribution
   const output = {
     _source: "Lichess Puzzle Database",
@@ -64,15 +68,34 @@ async function processPuzzles() {
     _url: "https://database.lichess.org/#puzzles",
     _generated: new Date().toISOString(),
     _count: singleMovePuzzles.length,
+    _note: note,
     puzzles: singleMovePuzzles
   };
 
   fs.writeFileSync(outputFile, JSON.stringify(output, null, 2));
 
-  console.log(`\nComplete!`);
-  console.log(`Total puzzles processed: ${totalProcessed}`);
-  console.log(`Single-move puzzles found: ${singleMoveCount}`);
-  console.log(`Output saved to: ${outputFile}`);
+  console.log(`  Processed ${totalProcessed} lines, found ${singleMoveCount} puzzles`);
+  return singleMoveCount;
 }
 
-processPuzzles().catch(console.error);
+async function processAllCSVs() {
+  const publicDir = './public';
+  const files = fs.readdirSync(publicDir);
+  const csvFiles = files.filter(f => f.endsWith('.csv') && f.startsWith('lichess_db_puzzle-'));
+
+  console.log(`Found ${csvFiles.length} CSV files to convert\n`);
+
+  for (const csvFile of csvFiles) {
+    const csvPath = path.join(publicDir, csvFile);
+    const jsonFile = csvFile.replace('.csv', '.json');
+    const jsonPath = path.join(publicDir, jsonFile);
+
+    console.log(`Converting ${csvFile}...`);
+    await processSingleCSV(csvPath, jsonPath);
+    console.log(`  Created ${jsonFile}\n`);
+  }
+
+  console.log('Conversion complete!');
+}
+
+processAllCSVs().catch(console.error);
