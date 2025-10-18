@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onOpenSettings })
   return (
     <header style={{ backgroundColor: '#202020', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #404040' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <h1 style={{ color: '#E0E0E0', margin: 0, fontSize: '24px' }}>Chess Drill</h1>
+        <h1 style={{ color: '#E0E0E0', margin: 0, fontSize: '24px' }}>Monkey Drill</h1>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
