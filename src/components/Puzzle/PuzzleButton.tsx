@@ -16,27 +16,20 @@ export const PuzzleButton: React.FC<PuzzleButtonProps> = ({ theme, chessGame }) 
   const handleGetPuzzle = async () => {
     setIsLoading(true);
     try {
-      const puzzle = await fetchPuzzle({ rating: 1000 }); // Request easier puzzles
-      if (puzzle) {
+      const puzzle = await fetchPuzzle({ rating: 1000 });
+      if (!puzzle) return;
 
-        // Parse the PGN to get all moves
-        const tempChess = new (await import('chess.js')).Chess();
-        tempChess.loadPgn(puzzle.game.pgn);
-        const allMoves = tempChess.history({ verbose: true });
+      // Parse the PGN to get all moves
+      const tempChess = new (await import('chess.js')).Chess();
+      tempChess.loadPgn(puzzle.game.pgn);
+      const allMoves = tempChess.history({ verbose: true });
 
-        // Load to initialPly (this positions us ready for the opponent's last move)
-        // The last move of the PGN will be auto-played, then the solution begins
-        const success = chessGame.loadPgn(puzzle.game.pgn, puzzle.puzzle.initialPly);
-        if (success) {
-          const lastPgnMove = allMoves[allMoves.length - 1];
-          const fullSequence = [lastPgnMove.lan, ...puzzle.puzzle.solution];
-          chessGame.startPuzzleMode(fullSequence);
-        } else {
-          console.error('Failed to load puzzle PGN');
-        }
-      } else {
-        console.error('Failed to fetch puzzle');
-      }
+      // Load to initialPly - the last move of the PGN will be auto-played, then the solution begins
+      if (!chessGame.loadPgn(puzzle.game.pgn, puzzle.puzzle.initialPly)) return;
+
+      const lastPgnMove = allMoves[allMoves.length - 1];
+      const fullSequence = [lastPgnMove.lan, ...puzzle.puzzle.solution];
+      chessGame.startPuzzleMode(fullSequence);
     } catch (error) {
       console.error('Error fetching puzzle:', error);
     } finally {
