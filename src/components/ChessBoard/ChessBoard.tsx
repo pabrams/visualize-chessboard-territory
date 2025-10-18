@@ -1,6 +1,7 @@
 import React from 'react';
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { Arrow } from '../../hooks/useArrows';
+import { customPieces } from './customPieces';
 
 interface ChessBoardProps {
   theme: 'dark' | 'light';
@@ -54,6 +55,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     position: chessPosition,
     areDraggablePieces: !isPuzzleAutoPlaying,
     boardOrientation,
+    pieces: customPieces,
     arrowOptions: {
       color: 'yellow',
       secondaryColor: 'red',
