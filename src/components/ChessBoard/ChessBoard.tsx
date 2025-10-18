@@ -56,6 +56,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     areDraggablePieces: !isPuzzleAutoPlaying,
     boardOrientation,
     pieces: customPieces,
+    allowDrawingArrows: false,
     arrowOptions: {
       color: 'yellow',
       secondaryColor: 'red',
