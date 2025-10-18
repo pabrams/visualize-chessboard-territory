@@ -3,6 +3,7 @@ import { PieceDropHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { useChessGame } from './hooks/useChessGame';
 import { useTheme } from './hooks/useTheme';
 import { useArrows } from './hooks/useArrows';
+import { useRating } from './hooks/useRating';
 import { ChessBoard } from './components/ChessBoard/ChessBoard';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import Header from './components/Header/Header';
@@ -13,6 +14,7 @@ import { LichessPuzzle } from './types/lichess';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
+  const { rating, incrementRating, decrementRating } = useRating();
   const [drillState, setDrillState] = useState<{
     active: boolean;
     showCountdown: boolean;
@@ -71,6 +73,7 @@ const App = () => {
               chessGame.startPuzzleMode(puzzle.puzzle.solution, true, () => {
                 // On wrong move in drill mode: record failure and load next puzzle
                 const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
+                decrementRating();
                 setDrillState(prev => ({
                   ...prev,
                   results: [...prev.results, { success: false, timeMs }],
@@ -188,6 +191,7 @@ const App = () => {
 
       // Record success and load next puzzle
       const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
+      incrementRating();
       setDrillState(prev => ({
         ...prev,
         results: [...prev.results, { success: true, timeMs }],
@@ -411,7 +415,7 @@ const App = () => {
 
           {/* Drill scoreboard - below chessboard */}
           {drillState.active && !drillState.showCountdown && !drillState.loading && (
-            <DrillScoreboard results={drillState.results} theme={theme.theme} />
+            <DrillScoreboard results={drillState.results} theme={theme.theme} rating={rating} />
           )}
         </div>
       </div>

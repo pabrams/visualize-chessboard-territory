@@ -8,9 +8,10 @@ export interface DrillResult {
 interface DrillScoreboardProps {
   results: DrillResult[];
   theme: 'dark' | 'light';
+  rating: number;
 }
 
-export const DrillScoreboard: React.FC<DrillScoreboardProps> = ({ results, theme }) => {
+export const DrillScoreboard: React.FC<DrillScoreboardProps> = ({ results, theme, rating }) => {
   const solvedCount = results.filter((r) => r.success).length;
   const attemptedCount = results.length;
 
@@ -30,16 +31,35 @@ export const DrillScoreboard: React.FC<DrillScoreboardProps> = ({ results, theme
     >
       <div
         style={{
-          width: '100%',
+          display: 'flex',
+          gap: '0.5rem',
           marginBottom: '0.5rem',
-          padding: '0.4rem',
-          backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5',
-          borderRadius: '8px',
-          color: theme === 'dark' ? '#ffffff' : '#000000',
-          textAlign: 'center',
         }}
       >
-        Solved: {solvedCount}/{attemptedCount}
+        <div
+          style={{
+            flex: 1,
+            padding: '0.4rem',
+            backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5',
+            borderRadius: '8px',
+            color: theme === 'dark' ? '#ffffff' : '#000000',
+            textAlign: 'center',
+          }}
+        >
+          Solved: {solvedCount}/{attemptedCount}
+        </div>
+        <div
+          style={{
+            padding: '0.4rem 0.8rem',
+            backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5',
+            borderRadius: '8px',
+            color: theme === 'dark' ? '#ffd700' : '#ff8c00',
+            textAlign: 'center',
+            fontWeight: 'bold',
+          }}
+        >
+          Rating: {rating}
+        </div>
       </div>
       <div
         style={{
