@@ -5,31 +5,28 @@ import { useTheme } from './hooks/useTheme';
 import { useArrows } from './hooks/useArrows';
 import { ChessBoard } from './components/ChessBoard/ChessBoard';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
-import { PuzzleButton } from './components/Puzzle/PuzzleButton';
-import { PuzzleSuccessIndicator } from './components/Puzzle/PuzzleSuccessIndicator';
-import { Sidebar } from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
 import { DrillCountdown } from './components/Drill/DrillCountdown';
 import { DrillTimer } from './components/Drill/DrillTimer';
 import { DrillScoreboard, DrillResult } from './components/Drill/DrillScoreboard';
-import { DrillButton } from './components/Drill/DrillButton';
 import { LichessPuzzle } from './types/lichess';
 
 const App = () => {
   const [showSettings, setShowSettings] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
   const [drillState, setDrillState] = useState<{
     active: boolean;
     showCountdown: boolean;
     loading: boolean;
     results: DrillResult[];
     puzzleQueue: LichessPuzzle[];
+    playerColor: 'white' | 'black';
   }>({
     active: false,
     showCountdown: false,
     loading: false,
     results: [],
     puzzleQueue: [],
+    playerColor: 'white',
   });
   
   const chessGame = useChessGame();
@@ -93,18 +90,26 @@ const App = () => {
   }, [chessGame]);
 
   const handleDrillStart = async () => {
+    // Randomly select white or black
+    const playerColor: 'white' | 'black' = Math.random() < 0.5 ? 'white' : 'black';
+    console.log(`Drill color selected: ${playerColor}`);
+
     setDrillState({
       active: true,
       showCountdown: false,
       loading: true,
       results: [],
       puzzleQueue: [],
+      playerColor,
     });
 
     try {
-      // Load puzzles from local JSON file
-      console.log('Loading single-move puzzles from local database...');
-      const response = await fetch('/visualize-chessboard-territory/single-move-puzzles.json');
+      // Load puzzles from color-specific JSON file
+      const puzzleFile = playerColor === 'white'
+        ? '/visualize-chessboard-territory/single-move-puzzles-w.json'
+        : '/visualize-chessboard-territory/single-move-puzzles-b.json';
+      console.log(`Loading ${playerColor} puzzles from ${puzzleFile}...`);
+      const response = await fetch(puzzleFile);
       const data = await response.json();
 
       // Shuffle and take a random subset
@@ -169,6 +174,7 @@ const App = () => {
       loading: false,
       results: [],
       puzzleQueue: [],
+      playerColor: 'white',
     });
     chessGame.exitPuzzleMode();
   };
@@ -222,12 +228,10 @@ const App = () => {
   return (
     <>
       <Header
-        onOpenSidebar={() => setShowSidebar(true)}
         theme={theme.theme}
         onToggleTheme={theme.toggleTheme}
         onOpenSettings={() => setShowSettings(!showSettings)}
       />
-      <PuzzleSuccessIndicator show={chessGame.puzzleState.completed && !chessGame.puzzleState.drillMode && !drillState.active} theme={theme.theme} />
 
       {/* Drill mode components */}
       {drillState.loading && (
@@ -277,16 +281,6 @@ const App = () => {
           boxSizing: 'border-box'
         }}
       >
-        {/* Sidebar */}
-        <Sidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} theme={theme.theme}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '0.5rem', color: theme.theme === 'dark' ? '#ffffff' : '#000000' }}>
-              Puzzles
-            </h3>
-            <PuzzleButton theme={theme.theme} chessGame={chessGame} />
-            <DrillButton theme={theme.theme} onStartDrill={handleDrillStart} />
-          </div>
-        </Sidebar>
         <div data-testid="arrows-list" style={{ display: 'none' }}>
           {arrows.arrows.map(({ startSquare, endSquare, color }, i) => (
             <div key={i}>
@@ -306,8 +300,29 @@ const App = () => {
           />
         )}
 
-        {/* Begin drill button - only show when not in drill mode */}
-        {!drillState.active && !drillState.loading && !drillState.showCountdown && (
+        {/* Begin drill button / Color indicator */}
+        {drillState.active && !drillState.loading && !drillState.showCountdown ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: theme.theme === 'dark' ? '#222222' : '#ffffff',
+              border: `1px solid ${theme.theme === 'dark' ? '#444' : '#eeeeee'}`,
+              borderRadius: '8px',
+              padding: '16px 24px',
+              color: theme.theme === 'dark' ? '#ffffff' : '#000000',
+              boxShadow: theme.theme === 'dark'
+                ? '0 4px 12px rgba(0, 0, 0, 0.3)'
+                : '0 4px 12px rgba(0, 0, 0, 0.1)',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              marginBottom: '2rem',
+            }}
+          >
+            <span>You play {drillState.playerColor}</span>
+          </div>
+        ) : !drillState.loading && !drillState.showCountdown && (
           <button
             onClick={handleDrillStart}
             data-testid="beginButton"
@@ -378,6 +393,7 @@ const App = () => {
             onSquareRightClick={handleSquareRightClick}
             onMoveComplete={handleMoveComplete}
             isPuzzleAutoPlaying={chessGame.puzzleState.active && !chessGame.puzzleState.isPlayerTurn}
+            boardOrientation={drillState.active ? (drillState.playerColor === 'white' ? 'black' : 'white') : 'white'}
           />
 
           {/* Drill scoreboard - below chessboard */}
