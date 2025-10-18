@@ -99,31 +99,31 @@ export const useChessGame = () => {
     }
   };
 
-  const makeMove = (sourceSquare: string, targetSquare: string) => {
+  const makeMove = (sourceSquare: string, targetSquare: string, promotion?: string) => {
     try {
-      // Create a temporary chess instance at the current position
       const tempGame = new Chess();
       const currentNode = getCurrentNode();
       tempGame.load(currentNode.fen);
 
-      const move = tempGame.move({
+      const moveOptions: any = {
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q'
-      });
+      };
+
+      if (promotion) {
+        moveOptions.promotion = promotion;
+      }
+
+      const move = tempGame.move(moveOptions);
 
       if (!move) {
         return false;
       }
 
-      // If puzzle mode is active and it's the player's turn, validate the move
       if (puzzleState.active && puzzleState.isPlayerTurn) {
         const expectedMove = puzzleState.solution[puzzleState.currentMoveIndex];
-        const playerMove = move.lan; // Use LAN format for comparison
-
-        // Check if the move matches the expected solution move
+        const playerMove = move.lan;
         if (playerMove !== expectedMove) {
-          // In drill mode, call the wrong move callback and allow the move to be rejected
           if (puzzleState.drillMode && puzzleState.onWrongMove) {
             puzzleState.onWrongMove();
           }

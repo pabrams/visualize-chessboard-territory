@@ -111,7 +111,7 @@ export const fetchPuzzle = async (params?: {
 }): Promise<LichessPuzzle | null> => {
   try {
     const url = new URL(`${LICHESS_HOST}/api/puzzle/next`);
-    
+
     if (params) {
       if (params.themes) {
         const themes = Array.isArray(params.themes) ? params.themes.join(',') : params.themes;
@@ -146,4 +146,76 @@ export const fetchPuzzle = async (params?: {
     console.error('Error fetching puzzle:', error);
     return null;
   }
+};
+
+export const fetchPuzzleBatch = async (nb: number = 50, retries: number = 3): Promise<LichessPuzzle[]> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const url = new URL(`${LICHESS_HOST}/api/puzzle/batch/mix`);
+      url.searchParams.set('nb', nb.toString());
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/x-ndjson',
+        },
+      });
+
+      if (response.ok) {
+        const text = await response.text();
+        // Parse NDJSON (newline-delimited JSON)
+        const puzzles = text
+          .trim()
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => JSON.parse(line) as LichessPuzzle);
+        return puzzles;
+      } else if (response.status === 429) {
+        // Rate limited - wait with exponential backoff
+        const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s, 8s
+        console.warn(`Rate limited (429), waiting ${waitTime}ms before retry ${attempt + 1}/${retries}`);
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+      } else {
+        console.error('Failed to fetch puzzle batch:', response.status, response.statusText);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching puzzle batch:', error);
+      if (attempt < retries) {
+        const waitTime = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      return [];
+    }
+  }
+  return [];
+};
+
+export const fetchSingleMovePuzzles = async (targetCount: number = 100): Promise<LichessPuzzle[]> => {
+  const singleMovePuzzles: LichessPuzzle[] = [];
+  const batchSize = 50;
+  const maxBatches = Math.min(3, Math.ceil(targetCount / 5)); // Limit to 3 batches max
+
+  for (let i = 0; i < maxBatches && singleMovePuzzles.length < targetCount; i++) {
+    const batch = await fetchPuzzleBatch(batchSize);
+    const filtered = batch.filter(puzzle => {
+      const isSingleMove = puzzle.puzzle.solution.length === 1;
+      return isSingleMove;
+    });
+    console.log(`Batch ${i + 1}/${maxBatches}: Got ${batch.length} puzzles, filtered to ${filtered.length} single-move puzzles (total: ${singleMovePuzzles.length + filtered.length})`);
+    singleMovePuzzles.push(...filtered);
+
+    // Add delay between batches to avoid rate limiting - wait 3 seconds between batches
+    if (i < maxBatches - 1 && singleMovePuzzles.length < targetCount) {
+      console.log('Waiting 3 seconds before next batch to avoid rate limiting...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  }
+
+  console.log(`Finished fetching: ${singleMovePuzzles.length} single-move puzzles`);
+  return singleMovePuzzles.slice(0, targetCount);
 };

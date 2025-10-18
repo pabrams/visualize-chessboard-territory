@@ -28,10 +28,7 @@ export const PuzzleButton: React.FC<PuzzleButtonProps> = ({ theme, chessGame }) 
         // The last move of the PGN will be auto-played, then the solution begins
         const success = chessGame.loadPgn(puzzle.game.pgn, puzzle.puzzle.initialPly);
         if (success) {
-          // Get the last move from the PGN
           const lastPgnMove = allMoves[allMoves.length - 1];
-
-          // Start puzzle mode with the last PGN move + solution
           const fullSequence = [lastPgnMove.lan, ...puzzle.puzzle.solution];
           chessGame.startPuzzleMode(fullSequence);
         } else {

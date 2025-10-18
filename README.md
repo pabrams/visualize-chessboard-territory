@@ -1,3 +1,11 @@
+# Visualize Chessboard Territory
+
+## Data Attribution
+
+Chess puzzles are sourced from the [Lichess Puzzle Database](https://database.lichess.org/#puzzles), released under [CC0 Public Domain](https://creativecommons.org/publicdomain/zero/1.0/).
+
+---
+
 # Docker Dev Env for TS
 
 # Running tests
