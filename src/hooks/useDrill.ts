@@ -172,11 +172,8 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
         results: [...prev.results, { success: true, timeMs }],
       }));
 
-      // Small delay to ensure state is updated, then load next puzzle and reset flag
-      setTimeout(() => {
-        hasRecordedRef.current = false;
-        loadNextDrillPuzzle();
-      }, 50);
+      hasRecordedRef.current = false;
+      loadNextDrillPuzzle();
     }
   }, [chessGame.puzzleState.completed, drillState.active, chessGame.puzzleState.drillMode, loadNextDrillPuzzle, incrementRating]);
 

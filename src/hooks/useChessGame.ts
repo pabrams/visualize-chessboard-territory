@@ -346,62 +346,53 @@ export const useChessGame = () => {
       return;
     }
 
-    // Drill mode: 50ms delay for all moves
-    // Normal mode: First opponent move 1 second, subsequent 300ms
-    const delay = puzzleState.drillMode ? 50 : (puzzleState.currentMoveIndex === 0 ? 1000 : 300);
 
-    const timer = setTimeout(() => {
-      const nextMove = puzzleState.solution[puzzleState.currentMoveIndex];
-      if (!nextMove) {
-        console.error('No move found in solution at index', puzzleState.currentMoveIndex);
-        return;
-      }
+    const nextMove = puzzleState.solution[puzzleState.currentMoveIndex];
+    if (!nextMove) {
+      console.error('No move found in solution at index', puzzleState.currentMoveIndex);
+      return;
+    }
 
-      // Parse the UCI move (e.g., "e2e4")
-      const from = nextMove.substring(0, 2);
-      const to = nextMove.substring(2, 4);
-      const promotion = nextMove.length > 4 ? nextMove.substring(4) : undefined;
+    // Parse the UCI move (e.g., "e2e4")
+    const from = nextMove.substring(0, 2);
+    const to = nextMove.substring(2, 4);
+    const promotion = nextMove.length > 4 ? nextMove.substring(4) : undefined;
 
-      // Create a temporary chess instance at the current position
-      const tempGame = new Chess();
-      const currentNode = getCurrentNode();
-      tempGame.load(currentNode.fen);
+    // Create a temporary chess instance at the current position
+    const tempGame = new Chess();
+    const currentNode = getCurrentNode();
+    tempGame.load(currentNode.fen);
 
-      const move = tempGame.move({
-        from,
-        to,
-        promotion: promotion as 'q' | 'r' | 'b' | 'n' | undefined,
-      });
+    const move = tempGame.move({
+      from,
+      to,
+      promotion: promotion as 'q' | 'r' | 'b' | 'n' | undefined,
+    });
 
-      if (!move) {
-        console.error('❌ Failed to make opponent move:', nextMove);
-        return;
-      }
+    if (!move) {
+      console.error('❌ Failed to make opponent move:', nextMove);
+      return;
+    }
 
-      // Add the move to the game tree
-      const { tree: updatedTree } = addMoveToTree(
-        gameTree,
-        gameTree.currentNodeId,
-        move.lan,
-        move.san,
-        tempGame.fen()
-      );
+    // Add the move to the game tree
+    const { tree: updatedTree } = addMoveToTree(
+      gameTree,
+      gameTree.currentNodeId,
+      move.lan,
+      move.san,
+      tempGame.fen()
+    );
 
-      setGameTree(updatedTree);
-      setChessPosition(tempGame.fen());
-      chessGameRef.current.load(tempGame.fen());
+    setGameTree(updatedTree);
+    setChessPosition(tempGame.fen());
+    chessGameRef.current.load(tempGame.fen());
 
-      // Now it's the player's turn
-      setPuzzleState(prev => ({
-        ...prev,
-        currentMoveIndex: prev.currentMoveIndex + 1,
-        isPlayerTurn: true,
-      }));
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
+    // Now it's the player's turn
+    setPuzzleState(prev => ({
+      ...prev,
+      currentMoveIndex: prev.currentMoveIndex + 1,
+      isPlayerTurn: true,
+    }));
   }, [puzzleState, gameTree]);
 
   const getAttackers = (square: Square, color: 'w' | 'b') => {
