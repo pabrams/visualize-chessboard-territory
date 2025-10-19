@@ -27,7 +27,6 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   darkSquareColor,
   sourceSquare,
   targetSquare,
-  isAtFinalPosition,
   onPieceDrop,
   onSquareRightClick,
   onMoveComplete,
@@ -69,10 +68,10 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       activeOpacity: 0.6,
     },
     boardStyle: {
-      width: 'min(95vh, calc(100vw - 4rem))',
-      height: 'min(95vh, calc(100vw - 4rem))',
-      maxWidth: '100%',
-      maxHeight: '100%',
+      width: '100%',
+      height: '100%',
+      outline: `3px dashed ${lightSquareColor}`,
+      outlineOffset: '2px',
       boxShadow: theme === 'dark'
         ? '0 8px 32px rgba(0, 0, 0, 0.8)'
         : '0 8px 32px rgba(0, 0, 0, 0.15)',

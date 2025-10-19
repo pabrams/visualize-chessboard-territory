@@ -19,8 +19,8 @@ export const DrillScoreboard: React.FC<DrillScoreboardProps> = ({ results, theme
     <div
       style={{
         width: '100%',
-        minHeight: '150px',
-        maxHeight: '200px',
+        minHeight: '120px',
+        maxHeight: '180px',
         padding: '0.75rem',
         backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
         border: `1px solid ${theme === 'dark' ? '#444' : '#e0e0e0'}`,

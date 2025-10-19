@@ -2,6 +2,7 @@ import React from 'react';
 import { useLichessAuth } from '../../hooks/useLichessAuth';
 import { login } from '../../services/lichessAuth';
 import { SettingsMenu } from '../Settings/SettingsMenu';
+import './Header.css';
 
 interface HeaderProps {
   theme: 'dark' | 'light';
@@ -13,15 +14,15 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onOpenSettings })
   const { user, loading, logout } = useLichessAuth();
 
   return (
-    <header style={{ backgroundColor: '#202020', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #404040' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <h1 style={{ color: '#E0E0E0', margin: 0, fontSize: '24px' }}>Monkey Drill</h1>
+    <header>
+      <div className="header-title-section">
+        <h1 className="header-title">Monkey Drill</h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="header-actions">
         {/* Settings menu with auth */}
         {loading ? (
-          <div style={{ color: '#E0E0E0', fontSize: '14px' }}>Loading...</div>
+          <div className="header-loading">Loading...</div>
         ) : (
           <SettingsMenu
             theme={theme}

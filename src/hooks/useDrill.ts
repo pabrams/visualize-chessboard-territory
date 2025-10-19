@@ -1,0 +1,197 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { LichessPuzzle } from '../types/lichess';
+import { DrillResult } from '../components/Drill/DrillScoreboard';
+
+interface DrillState {
+  active: boolean;
+  loading: boolean;
+  results: DrillResult[];
+  puzzleQueue: LichessPuzzle[];
+  playerColor: 'white' | 'black';
+  currentPuzzle: (LichessPuzzle & { _gameUrl?: string }) | null;
+}
+
+interface UseDrillProps {
+  chessGame: any; // TODO: type this properly
+  incrementRating: () => void;
+  decrementRating: () => void;
+}
+
+export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDrillProps) => {
+  const [drillState, setDrillState] = useState<DrillState>({
+    active: false,
+    loading: false,
+    results: [],
+    puzzleQueue: [],
+    playerColor: 'white',
+    currentPuzzle: null,
+  });
+
+  const loadNextDrillPuzzle = useCallback(() => {
+    setDrillState(prev => {
+      if (prev.puzzleQueue.length === 0) {
+        console.error('Puzzle queue is empty!');
+        return prev;
+      }
+
+      const [puzzle, ...remainingQueue] = prev.puzzleQueue;
+
+      chessGame.exitPuzzleMode();
+
+      // Load from FEN and make the setup move manually to avoid state sync issues
+      import('chess.js').then(({ Chess }) => {
+        const setupMove = (puzzle as any)._setupMove;
+        const fen = (puzzle as any)._fen;
+
+        // Create PGN with just the setup move
+        const tempChess = new Chess(fen);
+        const from = setupMove.substring(0, 2);
+        const to = setupMove.substring(2, 4);
+        const promotion = setupMove.length > 4 ? setupMove.substring(4) : undefined;
+
+        const move = tempChess.move({ from, to, promotion: promotion as any });
+
+        if (move) {
+          const pgn = tempChess.pgn();
+          const success = chessGame.loadPgn(pgn);
+
+          if (success) {
+            chessGame.startPuzzleMode(puzzle.puzzle.solution, true, () => {
+              // On wrong move in drill mode: record failure and load next puzzle
+              const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
+              decrementRating();
+              setDrillState(prev => ({
+                ...prev,
+                results: [...prev.results, { success: false, timeMs }],
+              }));
+              loadNextDrillPuzzle();
+            });
+          }
+        }
+      });
+   
+      return {
+        ...prev,
+        puzzleQueue: remainingQueue,
+        currentPuzzle: puzzle as any,
+      };
+    });
+  }, [chessGame, decrementRating]);
+
+  const handleDrillStart = useCallback(async () => {
+    // Randomly select white or black
+    const playerColor: 'white' | 'black' = Math.random() < 0.5 ? 'white' : 'black';
+    console.log(`Drill color selected: ${playerColor}`);
+
+    setDrillState({
+      active: true,
+      loading: true,
+      results: [],
+      puzzleQueue: [],
+      playerColor,
+      currentPuzzle: null,
+    });
+
+    try {
+      // Load puzzles from color-specific JSON file
+      const puzzleFile = playerColor === 'white'
+        ? '/visualize-chessboard-territory/lichess_db_puzzle-w-one-move-neophyte.json'
+        : '/visualize-chessboard-territory/lichess_db_puzzle-b-one-move-neophyte.json';
+      console.log(`Loading ${playerColor} puzzles from ${puzzleFile}...`);
+      const response = await fetch(puzzleFile);
+      const data = await response.json();
+
+      // Shuffle and take a random subset
+      const shuffled = data.puzzles.sort(() => Math.random() - 0.5).slice(0, 200);
+
+      // Convert to LichessPuzzle format
+      const puzzles = shuffled.map((p: any) => ({
+        game: {
+          pgn: '', // We'll construct this from FEN and moves
+          id: p.gameUrl.split('/')[3] || p.id,
+        },
+        puzzle: {
+          id: p.id,
+          initialPly: 0,
+          plays: 0,
+          rating: p.rating,
+          solution: [p.solution], // Single move solution
+          themes: p.themes,
+        },
+        // We need to construct a minimal PGN - just use FEN + the setup move
+        _fen: p.fen,
+        _setupMove: p.setupMove,
+        _gameUrl: p.gameUrl,
+      }));
+
+      console.log(`Loaded ${puzzles.length} puzzles from local database`);
+
+      // Set puzzles and start immediately
+      setDrillState(prev => ({
+        ...prev,
+        loading: false,
+        puzzleQueue: puzzles,
+      }));
+
+      // Start first puzzle immediately
+      setTimeout(() => loadNextDrillPuzzle(), 100);
+    } catch (error) {
+      console.error('Error loading puzzles:', error);
+      setDrillState(prev => ({
+        ...prev,
+        loading: false,
+        active: false,
+      }));
+    }
+  }, [loadNextDrillPuzzle]);
+
+  const handleDrillTimeUp = useCallback(() => {
+    // Save results to localStorage
+    const drillResults = {
+      timestamp: Date.now(),
+      results: drillState.results,
+    };
+    const existingResults = JSON.parse(localStorage.getItem('drillResults') || '[]');
+    localStorage.setItem('drillResults', JSON.stringify([...existingResults, drillResults]));
+
+    // End drill mode
+    setDrillState({
+      active: false,
+      loading: false,
+      results: [],
+      puzzleQueue: [],
+      playerColor: 'white',
+      currentPuzzle: null,
+    });
+    chessGame.exitPuzzleMode();
+  }, [drillState.results, chessGame]);
+
+  // Watch for puzzle completion in drill mode
+  const hasRecordedRef = useRef(false);
+
+  useEffect(() => {
+    if (drillState.active && chessGame.puzzleState.completed && chessGame.puzzleState.drillMode && !hasRecordedRef.current) {
+      hasRecordedRef.current = true;
+
+      // Record success and load next puzzle
+      const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
+      incrementRating();
+      setDrillState(prev => ({
+        ...prev,
+        results: [...prev.results, { success: true, timeMs }],
+      }));
+
+      // Small delay to ensure state is updated, then load next puzzle and reset flag
+      setTimeout(() => {
+        hasRecordedRef.current = false;
+        loadNextDrillPuzzle();
+      }, 50);
+    }
+  }, [chessGame.puzzleState.completed, drillState.active, chessGame.puzzleState.drillMode, loadNextDrillPuzzle, incrementRating]);
+
+  return {
+    drillState,
+    handleDrillStart,
+    handleDrillTimeUp,
+  };
+};
