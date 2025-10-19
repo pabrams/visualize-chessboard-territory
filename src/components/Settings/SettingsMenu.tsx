@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 interface SettingsMenuProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onOpenSettings: () => void;
   isLoggedIn: boolean;
   onLogin: () => void;
   onLogout: () => void;
@@ -13,7 +12,6 @@ interface SettingsMenuProps {
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({
   theme,
   onToggleTheme,
-  onOpenSettings,
   isLoggedIn,
   onLogin,
   onLogout,
@@ -109,42 +107,6 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
               </svg>
             )}
             <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
-
-          {/* Theme settings */}
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onOpenSettings();
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.75rem 1rem',
-              background: 'none',
-              border: 'none',
-              borderBottom: `1px solid ${theme === 'dark' ? '#444' : '#e0e0e0'}`,
-              cursor: 'pointer',
-              color: theme === 'dark' ? '#ffffff' : '#000000',
-              fontSize: '14px',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme === 'dark' ? '#333' : '#f5f5f5';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-            </svg>
-            <span>Theme Colors</span>
           </button>
 
           {/* Login/Logout */}

@@ -7,10 +7,9 @@ import './Header.css';
 interface HeaderProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onOpenSettings: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onOpenSettings }) => {
+const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme }) => {
   const { user, loading, logout } = useLichessAuth();
 
   return (
@@ -27,7 +26,6 @@ const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onOpenSettings })
           <SettingsMenu
             theme={theme}
             onToggleTheme={onToggleTheme}
-            onOpenSettings={onOpenSettings}
             isLoggedIn={!!user}
             onLogin={login}
             onLogout={logout}

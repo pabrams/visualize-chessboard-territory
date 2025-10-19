@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PieceDropHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { useChessGame } from './hooks/useChessGame';
 import { useTheme } from './hooks/useTheme';
@@ -6,7 +6,6 @@ import { useArrows } from './hooks/useArrows';
 import { useRating } from './hooks/useRating';
 import { useDrill } from './hooks/useDrill';
 import { ChessBoard } from './components/ChessBoard/ChessBoard';
-import { SettingsPanel } from './components/Settings/SettingsPanel';
 import Header from './components/Header/Header';
 import { DrillTimer } from './components/Drill/DrillTimer';
 import { DrillScoreboard } from './components/Drill/DrillScoreboard';
@@ -18,7 +17,6 @@ import { TimerContainer } from './components/Drill/TimerContainer';
 import './App.css';
 
 const App = () => {
-  const [showSettings, setShowSettings] = useState(false);
   const chessGame = useChessGame();
   const theme = useTheme();
   const arrows = useArrows();
@@ -59,7 +57,6 @@ const App = () => {
       <Header
         theme={theme.theme}
         onToggleTheme={theme.toggleTheme}
-        onOpenSettings={() => setShowSettings(!showSettings)}
       />
 
       {drillState.loading && <LoadingOverlay />}
@@ -79,16 +76,6 @@ const App = () => {
             </div>
           ))}
         </div>
-
-        {showSettings && (
-          <SettingsPanel
-            theme={theme.theme}
-            currentThemeColors={theme.currentThemeColors}
-            setLightThemeColors={theme.setLightThemeColors}
-            setDarkThemeColors={theme.setDarkThemeColors}
-            onClose={() => setShowSettings(false)}
-          />
-        )}
 
         {/* Main content - responsive drill layout */}
         <DrillLayout

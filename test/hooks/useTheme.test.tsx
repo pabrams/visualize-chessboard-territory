@@ -41,31 +41,19 @@ describe('useTheme', () => {
 
   it('should toggle theme', () => {
     const { result } = renderHook(() => useTheme());
-    
-    expect(result.current.theme).toBe('dark');
-    
-    act(() => {
-      result.current.toggleTheme();
-    });
-    
-    expect(result.current.theme).toBe('light');
-    
-    act(() => {
-      result.current.toggleTheme();
-    });
-    
-    expect(result.current.theme).toBe('dark');
-  });
 
-  it('should update theme colors', () => {
-    const { result } = renderHook(() => useTheme());
-    
-    const newColors = { pageBackgroundColor: '#123456' };
-    
+    expect(result.current.theme).toBe('dark');
+
     act(() => {
-      result.current.updateThemeColors(newColors);
+      result.current.toggleTheme();
     });
-    
-    expect(result.current.currentThemeColors.pageBackgroundColor).toBe('#123456');
+
+    expect(result.current.theme).toBe('light');
+
+    act(() => {
+      result.current.toggleTheme();
+    });
+
+    expect(result.current.theme).toBe('dark');
   });
 });
