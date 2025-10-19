@@ -49,13 +49,12 @@ describe('useChessGame', () => {
   it('should handle puzzle mode correctly', () => {
     const { result } = renderHook(() => useChessGame());
 
-    // Start drill mode with single move (typical drill puzzle)
+    // Start puzzle mode with single move
     act(() => {
-      result.current.startPuzzleMode(['e2e4'], true);
+      result.current.startPuzzleMode(['e2e4']);
     });
 
     expect(result.current.puzzleState.active).toBe(true);
-    expect(result.current.puzzleState.drillMode).toBe(true);
     expect(result.current.puzzleState.isPlayerTurn).toBe(true);
 
     // Make correct move - should complete the puzzle

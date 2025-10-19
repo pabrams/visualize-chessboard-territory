@@ -7,9 +7,8 @@ interface PuzzleState {
   currentMoveIndex: number; // Index of the next expected move in the solution
   isPlayerTurn: boolean; // Whether it's the player's turn or the engine is making a move
   completed: boolean; // Whether the puzzle has been successfully completed
-  drillMode: boolean; // Whether this is a drill puzzle
-  puzzleStartTime?: number; // Timestamp when puzzle started (for drill mode)
-  onWrongMove?: () => void; // Callback for wrong moves in drill mode
+  puzzleStartTime?: number; // Timestamp when puzzle started
+  onWrongMove?: () => void; // Callback for wrong moves
 }
 
 export const useChessGame = () => {
@@ -22,7 +21,6 @@ export const useChessGame = () => {
     currentMoveIndex: 0,
     isPlayerTurn: false,
     completed: false,
-    drillMode: false,
   });
 
   const getLastMove = () => {
@@ -61,7 +59,7 @@ export const useChessGame = () => {
         if (playerMove !== expectedMove) {
           // Wrong move - undo it
           chessGameRef.current.undo();
-          if (puzzleState.drillMode && puzzleState.onWrongMove) {
+          if (puzzleState.onWrongMove) {
             puzzleState.onWrongMove();
           }
           return false;
@@ -113,15 +111,14 @@ export const useChessGame = () => {
     }
   };
 
-  const startPuzzleMode = (solution: string[], drillMode: boolean = false, onWrongMove?: () => void) => {
+  const startPuzzleMode = (solution: string[], onWrongMove?: () => void) => {
     setPuzzleState({
       active: true,
       solution,
       currentMoveIndex: 0,
-      isPlayerTurn: drillMode, // In drill mode, player starts immediately
+      isPlayerTurn: true, // Player starts immediately
       completed: false,
-      drillMode,
-      puzzleStartTime: drillMode ? Date.now() : undefined,
+      puzzleStartTime: Date.now(),
       onWrongMove,
     });
   };
@@ -133,7 +130,6 @@ export const useChessGame = () => {
       currentMoveIndex: 0,
       isPlayerTurn: false,
       completed: false,
-      drillMode: false,
       puzzleStartTime: undefined,
       onWrongMove: undefined,
     });

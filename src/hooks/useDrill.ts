@@ -55,8 +55,8 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
           const success = chessGame.loadPgn(pgn);
 
           if (success) {
-            chessGame.startPuzzleMode(puzzle.puzzle.solution, true, () => {
-              // On wrong move in drill mode: record failure and load next puzzle
+            chessGame.startPuzzleMode(puzzle.puzzle.solution, () => {
+              // On wrong move: record failure and load next puzzle
               const timeMs = Date.now() - (chessGame.puzzleState.puzzleStartTime || Date.now());
               decrementRating();
               setDrillState(prev => ({
@@ -161,7 +161,7 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
   const hasRecordedRef = useRef(false);
 
   useEffect(() => {
-    if (drillState.active && chessGame.puzzleState.completed && chessGame.puzzleState.drillMode && !hasRecordedRef.current) {
+    if (drillState.active && chessGame.puzzleState.completed && !hasRecordedRef.current) {
       hasRecordedRef.current = true;
 
       // Record success and load next puzzle
@@ -175,7 +175,7 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
       hasRecordedRef.current = false;
       loadNextDrillPuzzle();
     }
-  }, [chessGame.puzzleState.completed, drillState.active, chessGame.puzzleState.drillMode, loadNextDrillPuzzle, incrementRating]);
+  }, [chessGame.puzzleState.completed, drillState.active, loadNextDrillPuzzle, incrementRating]);
 
   return {
     drillState,
