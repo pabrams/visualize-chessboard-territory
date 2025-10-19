@@ -43,7 +43,6 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
         const setupMove = (puzzle as any)._setupMove;
         const fen = (puzzle as any)._fen;
 
-        // Create PGN with just the setup move
         const tempChess = new Chess(fen);
         const from = setupMove.substring(0, 2);
         const to = setupMove.substring(2, 4);
@@ -81,7 +80,6 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
   const handleDrillStart = useCallback(async () => {
     // Randomly select white or black
     const playerColor: 'white' | 'black' = Math.random() < 0.5 ? 'white' : 'black';
-    console.log(`Drill color selected: ${playerColor}`);
 
     setDrillState({
       active: true,
@@ -93,7 +91,6 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
     });
 
     try {
-      // Load puzzles from color-specific JSON file
       const puzzleFile = playerColor === 'white'
         ? '/visualize-chessboard-territory/lichess_db_puzzle-w-one-move-neophyte.json'
         : '/visualize-chessboard-territory/lichess_db_puzzle-b-one-move-neophyte.json';
@@ -101,13 +98,12 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
       const response = await fetch(puzzleFile);
       const data = await response.json();
 
-      // Shuffle and take a random subset
       const shuffled = data.puzzles.sort(() => Math.random() - 0.5).slice(0, 200);
 
       // Convert to LichessPuzzle format
       const puzzles = shuffled.map((p: any) => ({
         game: {
-          pgn: '', // We'll construct this from FEN and moves
+          pgn: '',
           id: p.gameUrl.split('/')[3] || p.id,
         },
         puzzle: {
@@ -118,22 +114,17 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
           solution: [p.solution], // Single move solution
           themes: p.themes,
         },
-        // We need to construct a minimal PGN - just use FEN + the setup move
         _fen: p.fen,
         _setupMove: p.setupMove,
         _gameUrl: p.gameUrl,
       }));
 
-      console.log(`Loaded ${puzzles.length} puzzles from local database`);
-
-      // Set puzzles and start immediately
       setDrillState(prev => ({
         ...prev,
         loading: false,
         puzzleQueue: puzzles,
       }));
 
-      // Start first puzzle immediately
       setTimeout(() => loadNextDrillPuzzle(), 100);
     } catch (error) {
       console.error('Error loading puzzles:', error);
