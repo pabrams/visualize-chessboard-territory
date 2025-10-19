@@ -1,11 +1,7 @@
-import React from 'react';
 import { PieceRenderObject } from 'react-chessboard';
 
-// Two-tone colors for white pieces (using red)
 const WHITE_MAIN = '#ff0040';
 const WHITE_ACCENT = '#aa0033';
-
-// Two-tone neon colors for black pieces (using blue)
 const BLACK_MAIN = '#0088ff';
 const BLACK_ACCENT = '#0044bb';
 
