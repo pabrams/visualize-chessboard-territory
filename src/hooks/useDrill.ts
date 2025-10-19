@@ -77,7 +77,7 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
     });
   }, [chessGame, decrementRating]);
 
-  const handleDrillStart = useCallback(async () => {
+  const handleDrillStart = async () => {
     // Randomly select white or black
     const playerColor: 'white' | 'black' = Math.random() < 0.5 ? 'white' : 'black';
 
@@ -125,7 +125,7 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
         puzzleQueue: puzzles,
       }));
 
-      setTimeout(() => loadNextDrillPuzzle(), 100);
+      loadNextDrillPuzzle();
     } catch (error) {
       console.error('Error loading puzzles:', error);
       setDrillState(prev => ({
@@ -134,7 +134,7 @@ export const useDrill = ({ chessGame, incrementRating, decrementRating }: UseDri
         active: false,
       }));
     }
-  }, [loadNextDrillPuzzle]);
+  };
 
   const handleDrillTimeUp = useCallback(() => {
     // Save results to localStorage
